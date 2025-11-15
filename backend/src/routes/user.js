@@ -1,5 +1,6 @@
 // Användar-routes som använder en lista i minnet som datakälla.
 const express = require("express");
+const requireAuth = require("../middleware/requireAuth");
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ router.get("/:id", (req, res) => {
 });
 
 // POST /user - skapa en ny användare
-router.post("/", (req, res) => {
+router.post("/", requireAuth, (req, res) => {
   const { name, email } = req.body;
 
   if (!name || !email) {
@@ -45,7 +46,7 @@ router.post("/", (req, res) => {
 });
 
 // PUT /user/:id - ersätt en användare
-router.put("/:id", (req, res) => {
+router.put("/:id", requireAuth, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   const user = users.find((u) => u.id === id);
 
@@ -65,7 +66,7 @@ router.put("/:id", (req, res) => {
 });
 
 // PATCH /user/:id - uppdatera delar av en användare
-router.patch("/:id", (req, res) => {
+router.patch("/:id", requireAuth, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   const user = users.find((u) => u.id === id);
 
@@ -92,7 +93,7 @@ router.patch("/:id", (req, res) => {
 });
 
 // DELETE /user/:id - ta bort en användare
-router.delete("/:id", (req, res) => {
+router.delete("/:id", requireAuth, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   const index = users.findIndex((u) => u.id === id);
 

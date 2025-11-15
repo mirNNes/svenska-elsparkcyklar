@@ -1,5 +1,6 @@
 // Cykel-routes som hanterar cyklar och enkla uthyrningar i minnet.
 const express = require('express');
+const requireAuth = require('../middleware/requireAuth');
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.get('/', (req, res) => {
 });
 
 // POST /bike - lägg till cykel
-router.post('/', (req, res) => {
+router.post('/', requireAuth, (req, res) => {
   const { cityId } = req.body;
 
   if (!cityId) {
@@ -35,7 +36,7 @@ router.post('/', (req, res) => {
 });
 
 // DELETE /bike/:id - ta bort cykel
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireAuth, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   const index = bikes.findIndex((b) => b.id === id);
 
@@ -53,7 +54,7 @@ router.delete('/:id', (req, res) => {
 });
 
 // POST /bike/rent/:bikeId/:userId - starta uthyrning
-router.post('/rent/:bikeId/:userId', (req, res) => {
+router.post('/rent/:bikeId/:userId', requireAuth, (req, res) => {
   const bikeId = Number.parseInt(req.params.bikeId, 10);
   const userId = Number.parseInt(req.params.userId, 10);
   const bike = bikes.find((b) => b.id === bikeId);
@@ -81,7 +82,7 @@ router.post('/rent/:bikeId/:userId', (req, res) => {
 });
 
 // POST /bike/rent-leave/:rentId - avsluta resa
-router.post('/rent-leave/:rentId', (req, res) => {
+router.post('/rent-leave/:rentId', requireAuth, (req, res) => {
   const rentId = Number.parseInt(req.params.rentId, 10);
   const rent = rents.find((r) => r.id === rentId);
 

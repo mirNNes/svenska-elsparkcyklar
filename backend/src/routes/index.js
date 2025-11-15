@@ -1,6 +1,7 @@
-// Base API router where feature-specific routers are mounted.
+// Grundrouter där varje API-del kopplas in.
 const express = require('express');
 const cityRouter = require('./city');
+const userRouter = require('./user');
 
 const router = express.Router();
 
@@ -10,5 +11,6 @@ router.get('/', (req, res) => {
 });
 
 router.use('/city', cityRouter);
+router.use('/user', userRouter);
 
 module.exports = router;

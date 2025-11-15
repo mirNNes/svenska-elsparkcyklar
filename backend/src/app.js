@@ -1,4 +1,4 @@
-// Entry point that wires the Express app and shared middleware.
+// Startfil som kopplar ihop Express och gemensamt middleware.
 const express = require('express');
 const apiRouter = require('./routes');
 
@@ -15,6 +15,18 @@ app.use('/api', apiRouter);
 
 app.get('/', (req, res) => {
   res.send('Backend fungerar!');
+});
+
+// 404 för alla okända routes.
+app.use((req, res, next) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+// Enkel central felhanterare.
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  const status = err.status || 500;
+  res.status(status).json({ error: err.message || 'Internal server error' });
 });
 
 app.listen(PORT, () => {

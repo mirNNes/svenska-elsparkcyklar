@@ -4,6 +4,7 @@ const cityRouter = require('./city');
 const userRouter = require('./user');
 const bikeRouter = require('./bike');
 const rideRouter = require('./ride');
+const authRouter = require('./auth');
 
 const router = express.Router();
 
@@ -16,5 +17,6 @@ router.use('/city', cityRouter);
 router.use('/user', userRouter);
 router.use('/bike', bikeRouter);
 router.use('/ride', rideRouter);
+router.use('/auth', authRouter);
 
 module.exports = router;

@@ -1,5 +1,6 @@
 // Stad-routes som använder en tillfällig lista i minnet.
 const express = require('express');
+const requireAuth = require('../middleware/requireAuth');
 
 const router = express.Router();
 
@@ -50,7 +51,7 @@ function applyCityUpdates(city, body, { requireField } = { requireField: false }
 }
 
 // POST /city - skapa en ny stad
-router.post('/', (req, res) => {
+router.post('/', requireAuth, (req, res) => {
   const { name, scootersAvailable } = req.body;
 
   if (!name) {
@@ -68,7 +69,7 @@ router.post('/', (req, res) => {
 });
 
 // PUT /city/:id - ersätt en stad
-router.put('/:id', (req, res) => {
+router.put('/:id', requireAuth, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   const city = cities.find((c) => c.id === id);
 
@@ -85,7 +86,7 @@ router.put('/:id', (req, res) => {
 });
 
 // PATCH /city/:id - uppdatera delar av en stad
-router.patch('/:id', (req, res) => {
+router.patch('/:id', requireAuth, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   const city = cities.find((c) => c.id === id);
 
@@ -102,7 +103,7 @@ router.patch('/:id', (req, res) => {
 });
 
 // DELETE /city/:id - ta bort en stad
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireAuth, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   const index = cities.findIndex((c) => c.id === id);
 

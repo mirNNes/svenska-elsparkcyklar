@@ -1,5 +1,6 @@
-// Base API router where future feature routes will be mounted.
+// Base API router where feature-specific routers are mounted.
 const express = require('express');
+const cityRouter = require('./city');
 
 const router = express.Router();
 
@@ -7,5 +8,7 @@ const router = express.Router();
 router.get('/', (req, res) => {
   res.json({ message: 'API ready for more routes' });
 });
+
+router.use('/city', cityRouter);
 
 module.exports = router;

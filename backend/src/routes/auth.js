@@ -1,6 +1,7 @@
 // Auth-routes som fejk-loggar in användare och ger enkla token-strängar.
 const express = require("express");
-const { rememberAccessToken } = require("../middleware/tokenStore");
+const { rememberAccessToken, revokeAccessToken } = require("../middleware/tokenStore");
+const requireAuth = require("../middleware/requireAuth");
 
 const router = express.Router();
 const refreshStore = new Map();
@@ -57,6 +58,22 @@ router.post("/refresh", (req, res) => {
     accessToken,
     refreshToken: newRefreshToken,
   });
+});
+
+// POST /auth/logout - revokera access- och refresh-token
+router.post("/logout", requireAuth, (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ error: "refreshToken krävs för logout" });
+  }
+
+  refreshStore.delete(refreshToken);
+  if (req.token) {
+    revokeAccessToken(req.token);
+  }
+
+  return res.json({ message: "Utloggad" });
 });
 
 module.exports = router;

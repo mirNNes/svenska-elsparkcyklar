@@ -20,6 +20,7 @@ function requireAuth(req, res, next) {
   }
 
   req.user = { username: session.username };
+  req.token = token;
 
   return next();
 }

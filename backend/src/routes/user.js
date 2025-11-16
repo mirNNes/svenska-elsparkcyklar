@@ -1,14 +1,11 @@
 // Användar-routes som använder en lista i minnet som datakälla.
 const express = require("express");
 const requireAuth = require("../middleware/requireAuth");
+const { users } = require("../dataStore");
 
 const router = express.Router();
 
-const users = [
-  { id: 1, name: "Mirnes", email: "mirnes@example.com" },
-  { id: 2, name: "Rebecka", email: "rebecka@example.com" },
-];
-let nextUserId = 3;
+let nextUserId = users.length + 1;
 
 // GET /user - lista alla användare
 router.get("/", (req, res) => {

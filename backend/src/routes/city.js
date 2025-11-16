@@ -1,14 +1,11 @@
 // Stad-routes som använder en tillfällig lista i minnet.
-const express = require('express');
-const requireAuth = require('../middleware/requireAuth');
+const express = require("express");
+const requireAuth = require("../middleware/requireAuth");
+const { cities } = require("../dataStore");
 
 const router = express.Router();
 
-const cities = [
-  { id: 1, name: 'Stockholm', scootersAvailable: 120 },
-  { id: 2, name: 'Göteborg', scootersAvailable: 80 },
-];
-let nextCityId = 3;
+let nextCityId = cities.length + 1;
 
 // GET /city - lista alla städer
 router.get('/', (req, res) => {

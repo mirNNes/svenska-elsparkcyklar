@@ -59,6 +59,10 @@ router.post('/rent/:bikeId/:userId', requireAuth, (req, res) => {
   const userId = Number.parseInt(req.params.userId, 10);
   const bike = bikes.find((b) => b.id === bikeId);
 
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(400).json({ error: 'Ogiltigt userId' });
+  }
+
   if (!bike) {
     return res.status(404).json({ error: 'Bike not found' });
   }

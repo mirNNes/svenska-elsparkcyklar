@@ -14,6 +14,8 @@ const rides = [
   },
 ];
 let nextRideId = 2;
+const knownBikes = [1, 2]; // Bör spegla cyklar som finns i systemet.
+const knownUsers = [1, 2]; // Bör spegla användare som finns i systemet.
 
 // GET /ride/user/:userId - hämta resor för en användare
 router.get("/user/:userId", (req, res) => {
@@ -45,6 +47,14 @@ router.post("/start", requireAuth, (req, res) => {
 
   if (!bikeId || !userId) {
     return res.status(400).json({ error: "bikeId och userId krävs" });
+  }
+
+  if (!knownBikes.includes(bikeId)) {
+    return res.status(404).json({ error: "Bike not found" });
+  }
+
+  if (!knownUsers.includes(userId)) {
+    return res.status(404).json({ error: "User not found" });
   }
 
   const alreadyActive = rides.find((ride) => ride.bikeId === bikeId && !ride.endedAt);

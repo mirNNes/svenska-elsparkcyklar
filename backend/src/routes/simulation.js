@@ -1,5 +1,6 @@
 // Simulation-routes som startar och stoppar en enkel timer i minnet.
-const express = require('express');
+const express = require("express");
+const requireAuth = require("../middleware/requireAuth");
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ function stopSimulation() {
 }
 
 // POST /simulation/start - starta simuleringsrunda
-router.post('/start', (req, res) => {
+router.post("/start", requireAuth, (req, res) => {
   const { count = 1000 } = req.body || {};
   const parsedCount = Number.parseInt(count, 10);
 
@@ -52,7 +53,7 @@ router.post('/start', (req, res) => {
 });
 
 // POST /simulation/stop - stoppa simuleringen
-router.post('/stop', (req, res) => {
+router.post("/stop", requireAuth, (req, res) => {
   if (!simulation.running) {
     return res.status(400).json({ error: 'Ingen simulation körs' });
   }

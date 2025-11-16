@@ -1,21 +1,11 @@
 // Ride-routes som loggar enkla resor i minnet.
 const express = require("express");
 const requireAuth = require("../middleware/requireAuth");
+const { rides, bikes, users } = require("../dataStore");
 
 const router = express.Router();
 
-const rides = [
-  {
-    id: 1,
-    bikeId: 1,
-    userId: 1,
-    startedAt: "2024-01-01T10:00:00.000Z",
-    endedAt: "2024-01-01T10:15:00.000Z",
-  },
-];
-let nextRideId = 2;
-const knownBikes = [1, 2]; // Bör spegla cyklar som finns i systemet.
-const knownUsers = [1, 2]; // Bör spegla användare som finns i systemet.
+let nextRideId = rides.length + 1;
 
 // GET /ride/user/:userId - hämta resor för en användare
 router.get("/user/:userId", (req, res) => {
@@ -49,11 +39,13 @@ router.post("/start", requireAuth, (req, res) => {
     return res.status(400).json({ error: "bikeId och userId krävs" });
   }
 
-  if (!knownBikes.includes(bikeId)) {
+  const bikeExists = bikes.some((b) => b.id === bikeId);
+  if (!bikeExists) {
     return res.status(404).json({ error: "Bike not found" });
   }
 
-  if (!knownUsers.includes(userId)) {
+  const userExists = users.some((u) => u.id === userId);
+  if (!userExists) {
     return res.status(404).json({ error: "User not found" });
   }
 

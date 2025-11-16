@@ -1,28 +1,24 @@
 // Cykel-routes som hanterar cyklar och enkla uthyrningar i minnet.
-const express = require('express');
-const requireAuth = require('../middleware/requireAuth');
+const express = require("express");
+const requireAuth = require("../middleware/requireAuth");
+const { bikes, rents, users } = require("../dataStore");
 
 const router = express.Router();
 
-const bikes = [
-  { id: 1, cityId: 1, isAvailable: true },
-  { id: 2, cityId: 2, isAvailable: true },
-];
-const rents = [];
-let nextBikeId = 3;
+let nextBikeId = bikes.length + 1;
 let nextRentId = 1;
 
 // GET /bike - lista alla cyklar
-router.get('/', (req, res) => {
+router.get("/", (req, res) => {
   res.json(bikes);
 });
 
 // POST /bike - lägg till cykel
-router.post('/', requireAuth, (req, res) => {
+router.post("/", requireAuth, (req, res) => {
   const { cityId } = req.body;
 
   if (!cityId) {
-    return res.status(400).json({ error: 'cityId krävs' });
+    return res.status(400).json({ error: "cityId krävs" });
   }
 
   const bike = {
@@ -36,17 +32,17 @@ router.post('/', requireAuth, (req, res) => {
 });
 
 // DELETE /bike/:id - ta bort cykel
-router.delete('/:id', requireAuth, (req, res) => {
+router.delete("/:id", requireAuth, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   const index = bikes.findIndex((b) => b.id === id);
 
   if (index === -1) {
-    return res.status(404).json({ error: 'Bike not found' });
+    return res.status(404).json({ error: "Bike not found" });
   }
 
   const activeRent = rents.find((rent) => rent.bikeId === id && !rent.endedAt);
   if (activeRent) {
-    return res.status(400).json({ error: 'Bike is currently rented' });
+    return res.status(400).json({ error: "Bike is currently rented" });
   }
 
   bikes.splice(index, 1);
@@ -54,21 +50,26 @@ router.delete('/:id', requireAuth, (req, res) => {
 });
 
 // POST /bike/rent/:bikeId/:userId - starta uthyrning
-router.post('/rent/:bikeId/:userId', requireAuth, (req, res) => {
+router.post("/rent/:bikeId/:userId", requireAuth, (req, res) => {
   const bikeId = Number.parseInt(req.params.bikeId, 10);
   const userId = Number.parseInt(req.params.userId, 10);
   const bike = bikes.find((b) => b.id === bikeId);
 
   if (!Number.isInteger(userId) || userId <= 0) {
-    return res.status(400).json({ error: 'Ogiltigt userId' });
+    return res.status(400).json({ error: "Ogiltigt userId" });
+  }
+
+  const userExists = users.some((u) => u.id === userId);
+  if (!userExists) {
+    return res.status(404).json({ error: "User not found" });
   }
 
   if (!bike) {
-    return res.status(404).json({ error: 'Bike not found' });
+    return res.status(404).json({ error: "Bike not found" });
   }
 
   if (!bike.isAvailable) {
-    return res.status(400).json({ error: 'Bike already rented' });
+    return res.status(400).json({ error: "Bike already rented" });
   }
 
   const rent = {
@@ -86,16 +87,16 @@ router.post('/rent/:bikeId/:userId', requireAuth, (req, res) => {
 });
 
 // POST /bike/rent-leave/:rentId - avsluta resa
-router.post('/rent-leave/:rentId', requireAuth, (req, res) => {
+router.post("/rent-leave/:rentId", requireAuth, (req, res) => {
   const rentId = Number.parseInt(req.params.rentId, 10);
   const rent = rents.find((r) => r.id === rentId);
 
   if (!rent) {
-    return res.status(404).json({ error: 'Rent not found' });
+    return res.status(404).json({ error: "Rent not found" });
   }
 
   if (rent.endedAt) {
-    return res.status(400).json({ error: 'Rent already finished' });
+    return res.status(400).json({ error: "Rent already finished" });
   }
 
   rent.endedAt = new Date().toISOString();

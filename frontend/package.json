@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "echo 'Bygger frontend... (placeholder)'"
+    "build": "echo 'Bygger frontend... (placeholder)' && mkdir -p dist && echo 'Bygger frontend... (placeholder)' > dist/index.html"
   },
   "keywords": [],
   "author": "",

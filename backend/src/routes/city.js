@@ -1,24 +1,23 @@
 // Stad-routes som använder en tillfällig lista i minnet.
 const express = require("express");
 const requireAuth = require("../middleware/requireAuth");
-const { cities } = require("../dataStore");
+const cityRepository = require("../repositories/cityRepository");
 
 const router = express.Router();
 
-let nextCityId = cities.length + 1;
-
 // GET /city - lista alla städer
-router.get('/', (req, res) => {
+router.get("/", async (req, res) => {
+  const cities = await cityRepository.getAllCities();
   res.json(cities);
 });
 
 // GET /city/:id - hämta en specifik stad
-router.get('/:id', (req, res) => {
+router.get("/:id", async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
-  const city = cities.find((c) => c.id === id);
+  const city = await cityRepository.getCityById(id);
 
   if (!city) {
-    return res.status(404).json({ error: 'City not found' });
+    return res.status(404).json({ error: "City not found" });
   }
 
   return res.json(city);
@@ -29,7 +28,7 @@ function applyCityUpdates(city, body, { requireField } = { requireField: false }
   const { name, scootersAvailable } = body;
 
   if (requireField && (name === undefined || scootersAvailable === undefined)) {
-    return { error: 'name and scootersAvailable are required' };
+    return { error: "name and scootersAvailable are required" };
   }
 
   if (name !== undefined) {
@@ -41,37 +40,31 @@ function applyCityUpdates(city, body, { requireField } = { requireField: false }
   }
 
   if (name === undefined && scootersAvailable === undefined) {
-    return { error: 'At least one field must be provided' };
+    return { error: "At least one field must be provided" };
   }
 
   return { city };
 }
 
 // POST /city - skapa en ny stad
-router.post('/', requireAuth, (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   const { name, scootersAvailable } = req.body;
 
   if (!name) {
-    return res.status(400).json({ error: 'name is required' });
+    return res.status(400).json({ error: "name is required" });
   }
 
-  const city = {
-    id: nextCityId++,
-    name,
-    scootersAvailable: Number.isFinite(scootersAvailable) ? scootersAvailable : 0,
-  };
-
-  cities.push(city);
+  const city = await cityRepository.createCity({ name, scootersAvailable });
   return res.status(201).json(city);
 });
 
 // PUT /city/:id - ersätt en stad
-router.put('/:id', requireAuth, (req, res) => {
+router.put("/:id", requireAuth, async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
-  const city = cities.find((c) => c.id === id);
+  const city = await cityRepository.getCityById(id);
 
   if (!city) {
-    return res.status(404).json({ error: 'City not found' });
+    return res.status(404).json({ error: "City not found" });
   }
 
   const result = applyCityUpdates(city, req.body, { requireField: true });
@@ -79,16 +72,17 @@ router.put('/:id', requireAuth, (req, res) => {
     return res.status(400).json({ error: result.error });
   }
 
-  return res.json(result.city);
+  const updatedCity = await cityRepository.updateCity(id, result.city);
+  return res.json(updatedCity);
 });
 
 // PATCH /city/:id - uppdatera delar av en stad
-router.patch('/:id', requireAuth, (req, res) => {
+router.patch("/:id", requireAuth, async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
-  const city = cities.find((c) => c.id === id);
+  const city = await cityRepository.getCityById(id);
 
   if (!city) {
-    return res.status(404).json({ error: 'City not found' });
+    return res.status(404).json({ error: "City not found" });
   }
 
   const result = applyCityUpdates(city, req.body);
@@ -96,19 +90,19 @@ router.patch('/:id', requireAuth, (req, res) => {
     return res.status(400).json({ error: result.error });
   }
 
-  return res.json(result.city);
+  const updatedCity = await cityRepository.updateCity(id, result.city);
+  return res.json(updatedCity);
 });
 
 // DELETE /city/:id - ta bort en stad
-router.delete('/:id', requireAuth, (req, res) => {
+router.delete("/:id", requireAuth, async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
-  const index = cities.findIndex((c) => c.id === id);
+  const success = await cityRepository.deleteCity(id);
 
-  if (index === -1) {
-    return res.status(404).json({ error: 'City not found' });
+  if (!success) {
+    return res.status(404).json({ error: "City not found" });
   }
 
-  cities.splice(index, 1);
   return res.status(204).send();
 });
 

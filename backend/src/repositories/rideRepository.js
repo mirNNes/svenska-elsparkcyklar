@@ -1,4 +1,4 @@
-// Repository för resor med in-memory-lagring.
+// Repository för resor: lagrar och uppdaterar rides i minnet.
 let nextRideId = 2;
 
 const rides = [

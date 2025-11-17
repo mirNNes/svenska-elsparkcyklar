@@ -1,4 +1,4 @@
-// Repository för uthyrningar (rents) med in-memory-lagring.
+// Repository för uthyrningar (rents): håller koll på aktiva/avslutade hyror i minnet.
 let nextRentId = 1;
 
 const rents = [];

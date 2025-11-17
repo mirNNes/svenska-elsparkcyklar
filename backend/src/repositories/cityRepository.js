@@ -1,4 +1,4 @@
-// Repository för städer med enkel in-memory-lagring.
+// Repository för städer: sköter CRUD mot en in-memory-lista (förberedelse för MongoDB).
 let nextCityId = 3;
 const cities = [
   { id: 1, name: "Stockholm", scootersAvailable: 120 },

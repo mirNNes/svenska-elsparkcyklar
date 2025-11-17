@@ -1,4 +1,4 @@
-// Repository för cyklar och uthyrningar med in-memory-lagring.
+// Repository för cyklar: hanterar cyklar och hyrstatus medan data ligger i minnet.
 const rentRepository = require("./rentRepository");
 
 let nextBikeId = 3;

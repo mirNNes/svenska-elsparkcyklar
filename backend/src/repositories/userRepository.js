@@ -1,4 +1,4 @@
-// Repository för användare med enkel in-memory-lagring.
+// Repository för användare: ansvarar för CRUD i en in-memory-lista (inför byte till MongoDB).
 let nextUserId = 3;
 
 const users = [

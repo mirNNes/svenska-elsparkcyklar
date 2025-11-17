@@ -1,13 +1,12 @@
 // Repository för cyklar och uthyrningar med in-memory-lagring.
+const rentRepository = require("./rentRepository");
+
 let nextBikeId = 3;
-let nextRentId = 1;
 
 const bikes = [
   { id: 1, cityId: 1, isAvailable: true },
   { id: 2, cityId: 2, isAvailable: true },
 ];
-
-const rents = [];
 
 async function getAllBikes() {
   return bikes;
@@ -27,17 +26,13 @@ async function createBike({ cityId }) {
   return bike;
 }
 
-async function isBikeRented(id) {
-  return rents.some((rent) => rent.bikeId === id && !rent.endedAt);
-}
-
 async function deleteBike(id) {
   const index = bikes.findIndex((b) => b.id === id);
   if (index === -1) {
     return { success: false, reason: "not_found" };
   }
 
-  const currentlyRented = await isBikeRented(id);
+  const currentlyRented = await rentRepository.isBikeRented(id);
   if (currentlyRented) {
     return { success: false, reason: "rented" };
   }
@@ -47,14 +42,7 @@ async function deleteBike(id) {
 }
 
 async function startRent(bikeId, userId) {
-  const rent = {
-    id: nextRentId++,
-    bikeId,
-    userId,
-    startedAt: new Date().toISOString(),
-    endedAt: null,
-  };
-  rents.push(rent);
+  const rent = await rentRepository.createRent({ bikeId, userId });
   const bike = bikes.find((b) => b.id === bikeId);
   if (bike) {
     bike.isAvailable = false;
@@ -63,15 +51,14 @@ async function startRent(bikeId, userId) {
 }
 
 async function getRentById(rentId) {
-  return rents.find((r) => r.id === rentId) || null;
+  return rentRepository.getRentById(rentId);
 }
 
 async function endRent(rentId) {
-  const rent = rents.find((r) => r.id === rentId);
-  if (!rent || rent.endedAt) {
+  const rent = await rentRepository.endRent(rentId);
+  if (!rent) {
     return null;
   }
-  rent.endedAt = new Date().toISOString();
   const bike = bikes.find((b) => b.id === rent.bikeId);
   if (bike) {
     bike.isAvailable = true;
@@ -84,7 +71,6 @@ module.exports = {
   getBikeById,
   createBike,
   deleteBike,
-  isBikeRented,
   startRent,
   endRent,
   getRentById,

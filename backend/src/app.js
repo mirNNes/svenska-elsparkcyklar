@@ -1,11 +1,14 @@
 // Startfil som kopplar ihop Express och gemensamt middleware.
 const express = require('express');
 const apiRouter = require('./routes');
+const connectDB = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
+
+connectDB();
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });

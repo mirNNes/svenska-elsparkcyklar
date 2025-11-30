@@ -1,35 +1,38 @@
 // Repository för uthyrningar (rents): håller koll på aktiva/avslutade hyror i minnet.
-let nextRentId = 1;
-
-const rents = [];
+const Rent = require("../models/Rent");
 
 async function createRent({ bikeId, userId }) {
-  const rent = {
-    id: nextRentId++,
+  const lastRent = await Rent.findOne().sort({ id: -1 });
+  const nextId = lastRent ? lastRent.id + 1 : 1;
+
+  const rent = new Rent({
+    id: nextId,
     bikeId,
     userId,
     startedAt: new Date().toISOString(),
     endedAt: null,
-  };
-  rents.push(rent);
+  });
+
+  await rent.save();
   return rent;
 }
 
 async function getRentById(rentId) {
-  return rents.find((r) => r.id === rentId) || null;
+  return await Rent.findOne({ id: rentId });
 }
 
 async function endRent(rentId) {
-  const rent = rents.find((r) => r.id === rentId);
-  if (!rent || rent.endedAt) {
-    return null;
-  }
+  const rent = await Rent.findOne({ id: rentId });
+  if (!rent || rent.endedAt) return null;
+
   rent.endedAt = new Date().toISOString();
+  await rent.save();
   return rent;
 }
 
 async function isBikeRented(bikeId) {
-  return rents.some((rent) => rent.bikeId === bikeId && !rent.endedAt);
+  const activeRent = await Rent.findOne({ bikeId, endedAt: null });
+  return !!activeRent;
 }
 
 module.exports = {

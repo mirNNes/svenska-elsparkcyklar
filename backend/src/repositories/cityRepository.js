@@ -1,47 +1,45 @@
 // Repository för städer: sköter CRUD mot en in-memory-lista (förberedelse för MongoDB).
-let nextCityId = 3;
-const cities = [
-  { id: 1, name: "Stockholm", scootersAvailable: 120 },
-  { id: 2, name: "Göteborg", scootersAvailable: 80 },
-];
+const City = require("../models/City");
+
 async function getAllCities() {
-  return cities;
+  return await City.find();
 }
+
 async function getCityById(id) {
-  return cities.find((city) => city.id === id) || null;
+  return await City.findOne({ id });
 }
+
 async function createCity({ name, scootersAvailable }) {
-  const city = {
-    id: nextCityId++,
+  const lastCity = await City.findOne().sort({ id: -1 });
+  const nextId = lastCity ? lastCity.id + 1 : 1;
+
+  const city = new City({
+    id: nextId,
     name,
-    scootersAvailable: Number.isFinite(scootersAvailable)
-      ? scootersAvailable
-      : 0,
-  };
-  cities.push(city);
+    scootersAvailable: Number.isFinite(scootersAvailable) ? scootersAvailable : 0,
+  });
+
+  await city.save();
   return city;
 }
+
 async function updateCity(id, updates) {
-  const city = cities.find((c) => c.id === id);
-  if (!city) {
-    return null;
-  }
-  if (updates.name !== undefined) {
-    city.name = updates.name;
-  }
-  if (updates.scootersAvailable !== undefined) {
+  const city = await City.findOne({ id });
+  if (!city) return null;
+
+  if (updates.name !== undefined) city.name = updates.name;
+  if (updates.scootersAvailable !== undefined)
     city.scootersAvailable = updates.scootersAvailable;
-  }
+
+  await city.save();
   return city;
 }
+
 async function deleteCity(id) {
-  const index = cities.findIndex((c) => c.id === id);
-  if (index === -1) {
-    return false;
-  }
-  cities.splice(index, 1);
-  return true;
+  const result = await City.deleteOne({ id });
+  return result.deletedCount > 0;
 }
+
 module.exports = {
   getAllCities,
   getCityById,
@@ -49,3 +47,4 @@ module.exports = {
   updateCity,
   deleteCity,
 };
+

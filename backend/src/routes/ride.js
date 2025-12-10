@@ -11,6 +11,6 @@ router.post("/start", requireAuth, rideController.startRide);
 router.post("/end", requireAuth, rideController.endRide);
 
 // GET /ride/:id
-router.get("/:id", requireAuth, rideController.getRideById);
+router.get("/:id", rideController.getRideById);
 
 module.exports = router;

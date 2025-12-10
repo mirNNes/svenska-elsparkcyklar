@@ -11,6 +11,6 @@ router.post("/start", requireAuth, rentController.startRent);
 router.post("/end", requireAuth, rentController.endRent);
 
 // GET /rent/:id
-router.get("/:id", requireAuth, rentController.getRentById);
+router.get("/:id", rentController.getRentById);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 // Startfil som kopplar ihop Express och gemensamt middleware.
+require('dotenv').config();
 const express = require('express');
 const apiRouter = require('./routes');
 const connectDB = require('./db');

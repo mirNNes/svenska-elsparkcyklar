@@ -1,37 +1,33 @@
-// Auth-routes som fejk-loggar in användare och ger enkla token-strängar.
 const express = require("express");
-const { rememberAccessToken, revokeAccessToken } = require("../middleware/tokenStore");
 const requireAuth = require("../middleware/requireAuth");
+const {
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} = require("../utils/jwt");
 
 const router = express.Router();
-const refreshStore = new Map();
+const refreshBlacklist = new Set();
 
-function createToken(prefix, username) {
-  return `${prefix}-${username}-${Date.now()}-${Math.round(Math.random() * 1000)}`;
-}
-
-// POST /auth/login - fejkad login som ger access och refresh token
+// POST /auth/login - förenklad login som ger riktiga JWT
 router.post("/login", (req, res) => {
-  const { username } = req.body;
+  const { username, password } = req.body || {};
 
-  if (!username) {
-    return res.status(400).json({ error: "username krävs" });
+  if (!username || !password) {
+    return res.status(400).json({ error: "username och password krävs" });
   }
 
-  const accessToken = createToken("access", username);
-  const refreshToken = createToken("refresh", username);
+  // Dummy-lookup: admin får role "admin", övriga "user"
+  const role = username === "admin" ? "admin" : "user";
+  const user = { id: username, username, role };
 
-  refreshStore.set(refreshToken, { username });
-  rememberAccessToken(accessToken, username);
+  const accessToken = signAccessToken(user);
+  const refreshToken = signRefreshToken(user);
 
-  return res.json({
-    user: { username },
-    accessToken,
-    refreshToken,
-  });
+  return res.json({ user, accessToken, refreshToken });
 });
 
-// POST /auth/refresh - skapa nytt tokenpar från ett refresh token
+// POST /auth/refresh - verifiera refresh token och ge nytt par
 router.post("/refresh", (req, res) => {
   const { refreshToken } = req.body;
 
@@ -39,28 +35,32 @@ router.post("/refresh", (req, res) => {
     return res.status(400).json({ error: "refreshToken krävs" });
   }
 
-  const session = refreshStore.get(refreshToken);
-
-  if (!session) {
-    return res.status(401).json({ error: "Ogiltigt refresh token" });
+  if (refreshBlacklist.has(refreshToken)) {
+    return res.status(401).json({ error: "Ogiltigt eller spärrat refresh token" });
   }
 
-  refreshStore.delete(refreshToken);
+  try {
+    const payload = verifyRefreshToken(refreshToken);
+    const user = { id: payload.id, username: payload.username, role: payload.role };
 
-  const accessToken = createToken("access", session.username);
-  const newRefreshToken = createToken("refresh", session.username);
+    const newAccessToken = signAccessToken(user);
+    const newRefreshToken = signRefreshToken(user);
 
-  refreshStore.set(newRefreshToken, { username: session.username });
-  rememberAccessToken(accessToken, session.username);
+    // Spärra gamla refresh token
+    refreshBlacklist.add(refreshToken);
 
-  return res.json({
-    user: { username: session.username },
-    accessToken,
-    refreshToken: newRefreshToken,
-  });
+    return res.json({
+      user,
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    });
+  } catch (error) {
+    const message = error.name === "TokenExpiredError" ? "Refresh token har gått ut" : "Ogiltigt refresh token";
+    return res.status(401).json({ error: message });
+  }
 });
 
-// POST /auth/logout - revokera access- och refresh-token
+// POST /auth/logout - spärra refresh-token
 router.post("/logout", requireAuth, (req, res) => {
   const { refreshToken } = req.body;
 
@@ -68,10 +68,7 @@ router.post("/logout", requireAuth, (req, res) => {
     return res.status(400).json({ error: "refreshToken krävs för logout" });
   }
 
-  refreshStore.delete(refreshToken);
-  if (req.token) {
-    revokeAccessToken(req.token);
-  }
+  refreshBlacklist.add(refreshToken);
 
   return res.json({ message: "Utloggad" });
 });

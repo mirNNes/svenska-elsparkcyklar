@@ -1,5 +1,5 @@
-// Middleware som kräver ett fejk-token i Authorization-headern.
-const { getAccessSession } = require("./tokenStore");
+// Middleware som verifierar JWT i Authorization-headern.
+const { verifyAccessToken } = require("../utils/jwt");
 
 function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization || "";
@@ -10,19 +10,15 @@ function requireAuth(req, res, next) {
 
   const token = authHeader.slice(7).trim();
 
-  if (!token.startsWith("access-")) {
-    return res.status(401).json({ error: "Ogiltigt tokenformat" });
+  try {
+    const payload = verifyAccessToken(token);
+    req.user = { id: payload.id, role: payload.role, ...payload };
+    req.token = token;
+    return next();
+  } catch (error) {
+    const message = error.name === "TokenExpiredError" ? "Token har gått ut" : "Ogiltigt token";
+    return res.status(401).json({ error: message });
   }
-
-  const session = getAccessSession(token);
-  if (!session) {
-    return res.status(401).json({ error: "Ogiltigt eller utgånget token" });
-  }
-
-  req.user = { username: session.username };
-  req.token = token;
-
-  return next();
 }
 
 module.exports = requireAuth;

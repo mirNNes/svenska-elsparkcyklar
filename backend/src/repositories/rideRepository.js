@@ -1,6 +1,8 @@
 // Repository för resor: lagrar och uppdaterar rides i minnet.
 // repositories/rideRepository.js
 const Ride = require("../models/Ride");
+const Bike = require("../models/Bike");
+const User = require("../models/User");
 
 async function getRideById(id) {
   return await Ride.findOne({ id });
@@ -11,8 +13,16 @@ async function getRidesByUserId(userId) {
 }
 
 async function startRide(bikeId, userId) {
+  // Hämta bike och user via deras numeriska id och använd deras _id som referens
+  const bike = await Bike.findOne({ id: bikeId });
+  const user = await User.findOne({ id: userId });
+
+  if (!bike || !user) {
+    return { error: "Bike or user not found" };
+  }
+
   // Kolla om cykeln redan har en aktiv resa
-  const activeRide = await Ride.findOne({ bikeId, endedAt: null });
+  const activeRide = await Ride.findOne({ bikeId: bike._id, endedAt: null });
   if (activeRide) {
     return { error: "Bike already in ride" };
   }
@@ -23,8 +33,8 @@ async function startRide(bikeId, userId) {
 
   const ride = new Ride({
     id: nextId,
-    bikeId,
-    userId,
+    bikeId: bike._id,
+    userId: user._id,
     startedAt: new Date().toISOString(),
     endedAt: null,
   });

@@ -9,14 +9,20 @@ async function getCityById(id) {
   return await City.findOne({ id });
 }
 
-async function createCity({ name, scootersAvailable }) {
+async function createCity({ name, scootersAvailable, center, radius }) {
   const lastCity = await City.findOne().sort({ id: -1 });
   const nextId = lastCity ? lastCity.id + 1 : 1;
 
   const city = new City({
     id: nextId,
     name,
-    scootersAvailable: Number.isFinite(scootersAvailable) ? scootersAvailable : 0,
+    // Tillåt noll eller fallback om inget skickas
+    scootersAvailable: Number.isFinite(scootersAvailable)
+      ? scootersAvailable
+      : 0,
+    // Center/radius för kartor och regler
+    center,
+    radius,
   });
 
   await city.save();
@@ -30,6 +36,8 @@ async function updateCity(id, updates) {
   if (updates.name !== undefined) city.name = updates.name;
   if (updates.scootersAvailable !== undefined)
     city.scootersAvailable = updates.scootersAvailable;
+  if (updates.center !== undefined) city.center = updates.center;
+  if (updates.radius !== undefined) city.radius = updates.radius;
 
   await city.save();
   return city;
@@ -47,4 +55,3 @@ module.exports = {
   updateCity,
   deleteCity,
 };
-

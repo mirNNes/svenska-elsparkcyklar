@@ -9,8 +9,8 @@ async function getUserById(id) {
   return await User.findOne({ id });
 }
 
-async function createUser({ name, email }) {
-  // Räkna ut nästa id dynamiskt
+async function createUser({ name, email, username, role, stats }) {
+  // Räkna ut nästa id dynamiskt (behåller numeriskt id parallellt med Mongo _id)
   const lastUser = await User.findOne().sort({ id: -1 });
   const nextId = lastUser ? lastUser.id + 1 : 1;
 
@@ -18,6 +18,9 @@ async function createUser({ name, email }) {
     id: nextId,
     name,
     email,
+    username,
+    role,
+    stats,
   });
 
   await user.save();
@@ -30,6 +33,9 @@ async function updateUser(id, updates) {
 
   if (updates.name !== undefined) user.name = updates.name;
   if (updates.email !== undefined) user.email = updates.email;
+  if (updates.username !== undefined) user.username = updates.username;
+  if (updates.role !== undefined) user.role = updates.role;
+  if (updates.stats !== undefined) user.stats = updates.stats;
 
   await user.save();
   return user;
@@ -47,4 +53,3 @@ module.exports = {
   updateUser,
   deleteUser,
 };
-

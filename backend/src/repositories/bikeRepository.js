@@ -37,7 +37,11 @@ async function deleteBike(id) {
 
 async function startRent(bikeId, userId) {
   const rent = await rentRepository.createRent({ bikeId, userId });
-  await Bike.findOneAndUpdate({ id: bikeId }, { isAvailable: false });
+  if (rent && rent.error) {
+    return rent;
+  }
+  // rent.bikeId är nu en Mongo _id (ObjectId)
+  await Bike.findOneAndUpdate({ _id: rent.bikeId }, { isAvailable: false });
   return rent;
 }
 
@@ -49,7 +53,8 @@ async function endRent(rentId) {
   const rent = await rentRepository.endRent(rentId);
   if (!rent) return null;
 
-  await Bike.findOneAndUpdate({ id: rent.bikeId }, { isAvailable: true });
+  // rent.bikeId är en Mongo _id
+  await Bike.findOneAndUpdate({ _id: rent.bikeId }, { isAvailable: true });
   return rent;
 }
 

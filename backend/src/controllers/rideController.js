@@ -22,6 +22,12 @@ async function startRide(req, res) {
     return res.status(400).json({ error: "Bike already rented" });
 
   const ride = await rideRepository.startRide(bikeId, userId);
+  if (ride && ride.error) {
+    // rideRepository svarar med error om bike/user saknas eller redan är i resa
+    const status = ride.error === "Bike already in ride" ? 400 : 404;
+    return res.status(status).json({ error: ride.error });
+  }
+
   await bikeRepository.markBikeAsUnavailable(bikeId);
 
   res.status(201).json(ride);

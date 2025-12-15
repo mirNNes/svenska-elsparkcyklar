@@ -21,6 +21,10 @@ async function startRent(req, res) {
   if (!bike.isAvailable) return res.status(400).json({ error: "Bike already rented" });
 
   const rent = await bikeRepository.startRent(bikeId, userId);
+  if (rent && rent.error) {
+    // rentRepository returnerar error om bike/user saknas
+    return res.status(404).json({ error: rent.error });
+  }
   res.status(201).json(rent);
 }
 

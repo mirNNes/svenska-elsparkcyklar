@@ -17,6 +17,9 @@ async function getBikeById(req, res) {
 async function createBike(req, res) {
   const { cityId } = req.body;
   if (!cityId) return res.status(400).json({ error: "cityId krävs" });
+  if (cityId && typeof cityId !== "string" && !Number.isInteger(cityId)) {
+    return res.status(400).json({ error: "cityId måste vara ett id eller ObjectId-sträng" });
+  }
 
   const bike = await bikeRepository.createBike({ cityId });
   res.status(201).json(bike);
@@ -40,6 +43,7 @@ async function startRent(req, res) {
   const bikeId = Number.parseInt(req.params.bikeId, 10);
   const userId = Number.parseInt(req.params.userId, 10);
 
+  if (!Number.isInteger(bikeId) || bikeId <= 0) return res.status(400).json({ error: "Ogiltigt bikeId" });
   const bike = await bikeRepository.getBikeById(bikeId);
   const user = await userRepository.getUserById(userId);
 

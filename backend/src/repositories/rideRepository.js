@@ -1,4 +1,4 @@
-// Repository för resor: lagrar och uppdaterar rides i minnet.
+// Repository för resor: lagrar och uppdaterar rides i minnet
 // repositories/rideRepository.js
 const Ride = require("../models/Ride");
 const Bike = require("../models/Bike");
@@ -9,7 +9,10 @@ async function getRideById(id) {
 }
 
 async function getRidesByUserId(userId) {
-  return await Ride.find({ userId });
+  // Slå upp user och använd dess _id som referens
+  const user = await User.findOne({ id: userId });
+  if (!user) return [];
+  return await Ride.find({ userId: user._id });
 }
 
 async function startRide(bikeId, userId) {

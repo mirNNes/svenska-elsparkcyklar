@@ -15,7 +15,8 @@ async function startRide(req, res) {
 
   if (!user) return res.status(404).json({ error: "User not found" });
   if (!bike) return res.status(404).json({ error: "Bike not found" });
-  if (!bike.isAvailable) return res.status(400).json({ error: "Bike already rented" });
+  if (!bike.isAvailable)
+    return res.status(400).json({ error: "Bike already rented" });
 
   const ride = await rideRepository.startRide(bikeId, userId);
   await bikeRepository.markBikeAsUnavailable(bikeId);
@@ -29,10 +30,14 @@ async function endRide(req, res) {
 
   const ride = await rideRepository.getRideById(rideId);
   if (!ride) return res.status(404).json({ error: "Ride not found" });
-  if (ride.endedAt) return res.status(400).json({ error: "Ride already finished" });
+  if (ride.endedAt)
+    return res.status(400).json({ error: "Ride already finished" });
 
   const endedRide = await rideRepository.endRide(rideId);
-  await bikeRepository.markBikeAsAvailable(endedRide.bikeId);
+  // Sätt cykeln som ledig igen, Ride sparar bikeId som Mongo _id
+  await bikeRepository.markBikeAsAvailableByObjectId(
+    endedRide.ride ? endedRide.ride.bikeId : ride.bikeId
+  );
 
   res.json(endedRide);
 }

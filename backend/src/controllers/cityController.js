@@ -34,10 +34,19 @@ async function getCityById(req, res) {
 
 // POST /city - skapa ny stad
 async function createCity(req, res) {
-  const { name, scootersAvailable } = req.body;
-  if (!name) return res.status(400).json({ error: "name is required" });
+  const { name, scootersAvailable, center, radius } = req.body;
+  if (!name) return res.status(400).json({ error: "name krävs" });
+  if (scootersAvailable !== undefined && !Number.isFinite(scootersAvailable)) {
+    return res.status(400).json({ error: "scootersAvailable måste vara ett tal" });
+  }
+  if (center && (center.lat === undefined || center.lng === undefined)) {
+    return res.status(400).json({ error: "center måste innehålla lat och lng" });
+  }
+  if (radius !== undefined && !Number.isFinite(radius)) {
+    return res.status(400).json({ error: "radius måste vara ett tal" });
+  }
 
-  const city = await cityRepository.createCity({ name, scootersAvailable });
+  const city = await cityRepository.createCity({ name, scootersAvailable, center, radius });
   res.status(201).json(city);
 }
 

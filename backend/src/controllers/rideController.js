@@ -6,6 +6,9 @@ const userRepository = require("../repositories/userRepository");
 async function startRide(req, res) {
   const { bikeId, userId } = req.body;
 
+  if (!Number.isInteger(bikeId) || bikeId <= 0) {
+    return res.status(400).json({ error: "Ogiltigt bikeId" });
+  }
   const bike = await bikeRepository.getBikeById(bikeId);
   const user = await userRepository.getUserById(userId);
 
@@ -28,6 +31,9 @@ async function startRide(req, res) {
 async function endRide(req, res) {
   const { rideId } = req.body;
 
+  if (!Number.isInteger(rideId) || rideId <= 0) {
+    return res.status(400).json({ error: "Ogiltigt rideId" });
+  }
   const ride = await rideRepository.getRideById(rideId);
   if (!ride) return res.status(404).json({ error: "Ride not found" });
   if (ride.endedAt)

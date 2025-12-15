@@ -43,7 +43,8 @@ async function startRide(bikeId, userId) {
   return { ride };
 }
 
-async function stopRide(rideId) {
+// Enkel avslutning av resa med dummy-beräkning
+async function endRide(rideId) {
   const ride = await Ride.findOne({ id: rideId });
   if (!ride) {
     return { error: "Ride not found", code: "not_found" };
@@ -52,7 +53,24 @@ async function stopRide(rideId) {
     return { error: "Ride already finished", code: "already_finished" };
   }
 
-  ride.endedAt = new Date().toISOString();
+  const endTime = new Date();
+  ride.endedAt = endTime.toISOString();
+
+  // Dummy-beräkning: anta 200 m per minut (ca 12 km/h)
+  const durationMinutes = Math.max(
+    0,
+    (endTime - new Date(ride.startedAt)) / 60000
+  );
+  ride.distance = Math.round(durationMinutes * 200); // meter
+
+  // Energi: enkelt antagande 0.6 Wh per 100 meter
+  ride.energyUsed = Math.round(ride.distance * 0.6);
+
+  // Pris: 10 kr start + 2 kr per minut
+  const base = 10;
+  const perMinute = 2;
+  ride.price = Math.round((base + perMinute * durationMinutes) * 100) / 100;
+
   await ride.save();
   return { ride };
 }
@@ -61,5 +79,5 @@ module.exports = {
   getRideById,
   getRidesByUserId,
   startRide,
-  stopRide,
+  endRide,
 };

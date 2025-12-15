@@ -53,6 +53,21 @@ async function endRent(rentId) {
   return rent;
 }
 
+// Markera cykeln som upptagen, enkel flagga i db
+async function markBikeAsUnavailable(id) {
+  await Bike.findOneAndUpdate({ id }, { isAvailable: false });
+}
+
+// Markera cykeln som ledig
+async function markBikeAsAvailable(id) {
+  await Bike.findOneAndUpdate({ id }, { isAvailable: true });
+}
+
+// Markera cykeln som ledig via dess Mongo _id (används när ride sparar referensen)
+async function markBikeAsAvailableByObjectId(objectId) {
+  await Bike.findOneAndUpdate({ _id: objectId }, { isAvailable: true });
+}
+
 module.exports = {
   getAllBikes,
   getBikeById,
@@ -61,4 +76,7 @@ module.exports = {
   startRent,
   endRent,
   getRentById,
+  markBikeAsUnavailable,
+  markBikeAsAvailable,
+  markBikeAsAvailableByObjectId,
 };

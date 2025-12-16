@@ -1,4 +1,6 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
+const User = require("../models/User");
 const requireAuth = require("../middleware/requireAuth");
 const {
   signAccessToken,
@@ -9,67 +11,96 @@ const {
 const router = express.Router();
 const refreshBlacklist = new Set();
 
-// POST /auth/login - förenklad login som ger riktiga JWT
-router.post("/login", (req, res) => {
-  const { username, password } = req.body || {};
+/**
+ * POST /auth/login
+ * Admin-only login using email + password
+ */
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body || {};
 
-  if (!username || !password) {
-    return res.status(400).json({ error: "username och password krävs" });
+  if (!email || !password) {
+    return res.status(400).json({ error: "email och password krävs" });
   }
 
-  // Dummy-lookup: admin får role "admin", övriga "user"
-  const role = username === "admin" ? "admin" : "user";
-  const user = { id: username, username, role };
+  const user = await User.findOne({ email });
 
-  const accessToken = signAccessToken(user);
-  const refreshToken = signRefreshToken(user);
+  if (!user) {
+    return res.status(401).json({ error: "Fel e-post eller lösenord" });
+  }
 
-  return res.json({ user, accessToken, refreshToken });
+  // Only allow admin logins
+  if (user.role !== "admin") {
+    return res.status(403).json({ error: "Endast administratörer får logga in" });
+  }
+
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) {
+    return res.status(401).json({ error: "Fel e-post eller lösenord" });
+  }
+
+  // JWT payload
+  const payload = {
+    id: user._id,
+    email: user.email,
+    role: user.role,
+  };
+
+  const access_token = signAccessToken(payload);
+  const refresh_token = signRefreshToken(payload);
+
+  return res.json({
+    access_token,
+    refresh_token,
+    user: {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    },
+  });
 });
 
-// POST /auth/refresh - verifiera refresh token och ge nytt par
+/**
+ * POST /auth/refresh
+ */
 router.post("/refresh", (req, res) => {
-  const { refreshToken } = req.body;
+  const { refresh_token } = req.body;
 
-  if (!refreshToken) {
-    return res.status(400).json({ error: "refreshToken krävs" });
+  if (!refresh_token) {
+    return res.status(400).json({ error: "refresh_token krävs" });
   }
 
-  if (refreshBlacklist.has(refreshToken)) {
-    return res.status(401).json({ error: "Ogiltigt eller spärrat refresh token" });
+  if (refreshBlacklist.has(refresh_token)) {
+    return res.status(401).json({ error: "Refresh-token spärrad" });
   }
 
   try {
-    const payload = verifyRefreshToken(refreshToken);
-    const user = { id: payload.id, username: payload.username, role: payload.role };
+    const payload = verifyRefreshToken(refresh_token);
 
-    const newAccessToken = signAccessToken(user);
-    const newRefreshToken = signRefreshToken(user);
+    const newAccess = signAccessToken(payload);
+    const newRefresh = signRefreshToken(payload);
 
-    // Spärra gamla refresh token
-    refreshBlacklist.add(refreshToken);
+    refreshBlacklist.add(refresh_token);
 
     return res.json({
-      user,
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
+      access_token: newAccess,
+      refresh_token: newRefresh,
     });
-  } catch (error) {
-    const message = error.name === "TokenExpiredError" ? "Refresh token har gått ut" : "Ogiltigt refresh token";
-    return res.status(401).json({ error: message });
+  } catch (err) {
+    return res.status(401).json({ error: "Ogiltigt refresh token" });
   }
 });
 
-// POST /auth/logout - spärra refresh-token
+/**
+ * POST /auth/logout
+ */
 router.post("/logout", requireAuth, (req, res) => {
-  const { refreshToken } = req.body;
+  const { refresh_token } = req.body;
 
-  if (!refreshToken) {
-    return res.status(400).json({ error: "refreshToken krävs för logout" });
+  if (!refresh_token) {
+    return res.status(400).json({ error: "refresh_token krävs" });
   }
 
-  refreshBlacklist.add(refreshToken);
-
+  refreshBlacklist.add(refresh_token);
   return res.json({ message: "Utloggad" });
 });
 

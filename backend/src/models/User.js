@@ -6,6 +6,10 @@ const userSchema = new mongoose.Schema({
   username: { type: String, unique: true, sparse: true },
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
+
+  // Lösenordhash för admin login
+  passwordHash: { type: String, required: true },
+
   // Roller för att skilja på om det är anvädnare eller admin
   role: { type: String, enum: ["user", "admin"], default: "user" },
   // Anändarens statistik

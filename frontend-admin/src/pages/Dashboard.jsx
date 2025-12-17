@@ -1,32 +1,37 @@
-import { useEffect, useState } from "react";
-import { httpGet } from "../api/http";
+import { useState } from "react";
+import { httpPost } from "../api/http";
+import MapView from "./MapView";
 
 export default function Dashboard() {
-  const [bikes, setBikes] = useState([]);
+  // Används för att tvinga kartan att mountas om efter en reset
+  const [mapKey, setMapKey] = useState(0);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const data = await httpGet("/bike");
-        setBikes(data);
-      } catch (err) {
-        console.error("Kunde inte hämta bikes", err);
-      }
+  async function handleReset() {
+    try {
+      // Admin-reset av seed-data (kräver inloggning)
+      await httpPost("/admin/reset-seed");
+      // Tvinga kartan att hämta ny seed-data
+      setMapKey((prev) => prev + 1);
+    } catch (err) {
+      console.error(err);
+      alert("Kunde inte återställa seed-data");
     }
-    fetchData();
-  }, []);
+  }
 
   return (
-    <div>
-      <h1>Alla Bikes</h1>
-      <ul>
-        {bikes.map((bike) => (
-          <li key={bike._id}>
-            ID: {bike.id}, Battery: {bike.battery}, Available:{" "}
-            {bike.isAvailable ? "Yes" : "No"}
-          </li>
-        ))}
-      </ul>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <h1 style={{ margin: 0 }}>Dashboard</h1>
+          <p style={{ margin: 0 }}>Karta över alla seedade cyklar</p>
+        </div>
+        <button onClick={handleReset}>Återställ seed-data</button>
+      </header>
+
+      {/* Kartan får egen key så den mountas om vid reset */}
+      <div style={{ minHeight: "70vh" }}>
+        <MapView key={mapKey} />
+      </div>
     </div>
   );
 }

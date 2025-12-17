@@ -17,39 +17,49 @@ async function getUserById(req, res) {
 
 // POST /user - skapa användare
 async function createUser(req, res) {
-  const { name, email } = req.body;
+  const { name, email, username, role, stats } = req.body;
 
   if (!name || !email) {
-    return res.status(400).json({ error: "name and email are required" });
+    return res.status(400).json({ error: "name och email krävs" });
+  }
+  if (username && typeof username !== "string") return res.status(400).json({ error: "username måste vara en sträng" });
+  if (role && !["user", "admin"].includes(role)) return res.status(400).json({ error: "role måste vara user eller admin" });
+  if (stats && (stats.distance !== undefined && !Number.isFinite(stats.distance) || stats.rides !== undefined && !Number.isFinite(stats.rides))) {
+    return res.status(400).json({ error: "stats.distance/stats.rides måste vara tal" });
   }
 
-  const user = await userRepository.createUser({ name, email });
+  const user = await userRepository.createUser({ name, email, username, role, stats });
   res.status(201).json(user);
 }
 
 // PUT /user/:id - ersätt en användare
 async function updateUser(req, res) {
   const id = Number.parseInt(req.params.id, 10);
-  const { name, email } = req.body;
+  const { name, email, username, role, stats } = req.body;
 
   const user = await userRepository.getUserById(id);
   if (!user) return res.status(404).json({ error: "User not found" });
 
-  if (!name || !email) return res.status(400).json({ error: "name and email are required" });
+  if (!name || !email) return res.status(400).json({ error: "name och email krävs" });
+  if (username && typeof username !== "string") return res.status(400).json({ error: "username måste vara en sträng" });
+  if (role && !["user", "admin"].includes(role)) return res.status(400).json({ error: "role måste vara user eller admin" });
+  if (stats && (stats.distance !== undefined && !Number.isFinite(stats.distance) || stats.rides !== undefined && !Number.isFinite(stats.rides))) {
+    return res.status(400).json({ error: "stats.distance/stats.rides måste vara tal" });
+  }
 
-  const updatedUser = await userRepository.updateUser(id, { name, email });
+  const updatedUser = await userRepository.updateUser(id, { name, email, username, role, stats });
   res.json(updatedUser);
 }
 
 // PATCH /user/:id - uppdatera delar av en användare
 async function patchUser(req, res) {
   const id = Number.parseInt(req.params.id, 10);
-  const { name, email } = req.body;
+  const { name, email, username, role, stats } = req.body;
 
   const user = await userRepository.getUserById(id);
   if (!user) return res.status(404).json({ error: "User not found" });
 
-  const updatedUser = await userRepository.updateUser(id, { name, email });
+  const updatedUser = await userRepository.updateUser(id, { name, email, username, role, stats });
   res.json(updatedUser);
 }
 

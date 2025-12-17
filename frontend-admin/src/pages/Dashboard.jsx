@@ -1,45 +1,37 @@
-import { useEffect, useState } from "react";
-import { httpGet } from "../api/http";
+import { useState } from "react";
+import { httpPost } from "../api/http";
+import MapView from "./MapView";
 
 export default function Dashboard() {
-  // Lista med alla cyklar från backend
-  const [bikes, setBikes] = useState([]);
-  // Visar "Laddar..." medan data hämtas från /api/bike
-  const [loading, setLoading] = useState(true);
+  // Används för att tvinga kartan att mountas om efter en reset
+  const [mapKey, setMapKey] = useState(0);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      try {
-        // GET /api/bike → hämtar alla cyklar
-        const res = await httpGet("/bike");
-        if (!cancelled) setBikes(res.data);
-      } catch (e) {
-        if (!cancelled) console.error(e);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, []);
-
-  // Visa laddning medan cyklar hämtas
-  if (loading) return <div>Laddar...</div>;
+  async function handleReset() {
+    try {
+      // Admin-reset av seed-data (kräver inloggning)
+      await httpPost("/admin/reset-seed");
+      // Tvinga kartan att hämta ny seed-data
+      setMapKey((prev) => prev + 1);
+    } catch (err) {
+      console.error(err);
+      alert("Kunde inte återställa seed-data");
+    }
+  }
 
   return (
-    <div>
-      {/* Översikt: totalt antal cyklar */}
-      <h1>Dashboard ({bikes.length} cyklar)</h1>
-      {/* Lista alla cyklar med status */}
-      <ul>
-        {bikes.map(bike => (
-          <li key={bike._id}>
-            ID: {bike.id} | Batteri: {bike.battery}% | Ledig: {bike.isAvailable ? '✅' : '❌'}
-          </li>
-        ))}
-      </ul>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <h1 style={{ margin: 0 }}>Dashboard</h1>
+          <p style={{ margin: 0 }}>Karta över alla seedade cyklar</p>
+        </div>
+        <button onClick={handleReset}>Återställ seed-data</button>
+      </header>
+
+      {/* Kartan får egen key så den mountas om vid reset */}
+      <div style={{ minHeight: "70vh" }}>
+        <MapView key={mapKey} />
+      </div>
     </div>
   );
 }

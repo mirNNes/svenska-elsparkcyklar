@@ -5,6 +5,7 @@ const apiRouter = require("./routes");
 const connectDB = require("./db");
 const cors = require("cors");
 const createDefaultAdmin = require("./createDefaultAdmin");
+const seedData = require("./seedData");
 const http = require("http");
 const { Server } = require("socket.io");
 const { verifyAccessToken } = require("./utils/jwt");
@@ -94,6 +95,7 @@ connectDB()
     console.log("MongoDB connected");
 
     await createDefaultAdmin();
+    await seedData();
 
     server.listen(PORT, () => {
       console.log(`Backend + Socket.IO kör på port ${PORT}`);

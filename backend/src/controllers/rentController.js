@@ -6,6 +6,9 @@ const userRepository = require("../repositories/userRepository");
 async function startRent(req, res) {
   const { bikeId, userId } = req.body;
 
+  if (!Number.isInteger(bikeId) || bikeId <= 0) {
+    return res.status(400).json({ error: "Ogiltigt bikeId" });
+  }
   const bike = await bikeRepository.getBikeById(bikeId);
   const user = await userRepository.getUserById(userId);
 
@@ -18,12 +21,19 @@ async function startRent(req, res) {
   if (!bike.isAvailable) return res.status(400).json({ error: "Bike already rented" });
 
   const rent = await bikeRepository.startRent(bikeId, userId);
+  if (rent && rent.error) {
+    // rentRepository returnerar error om bike/user saknas
+    return res.status(404).json({ error: rent.error });
+  }
   res.status(201).json(rent);
 }
 
 // POST /rent/end - avsluta uthyrning
 async function endRent(req, res) {
   const { rentId } = req.body;
+  if (!Number.isInteger(rentId) || rentId <= 0) {
+    return res.status(400).json({ error: "Ogiltigt rentId" });
+  }
   const rent = await bikeRepository.getRentById(rentId);
 
   if (!rent) return res.status(404).json({ error: "Rent not found" });

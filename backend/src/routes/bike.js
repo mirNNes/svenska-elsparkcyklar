@@ -1,15 +1,20 @@
 const express = require("express");
-const requireAuth = require("../middleware/requireAuth");
 const bikeController = require("../controllers/bikeController");
 
 const router = express.Router();
 
+// GET /api/v1/bike
 router.get("/", bikeController.getAllBikes);
 router.get("/:id", bikeController.getBikeById);
-router.post("/", requireAuth, bikeController.createBike);
-router.delete("/:id", requireAuth, bikeController.deleteBike);
 
-router.post("/rent/:bikeId/:userId", requireAuth, bikeController.startRent);
-router.post("/rent-leave/:rentId", requireAuth, bikeController.endRent);
+// POST /api/v1/bike/rent/:bikeId/:userId
+router.post("/rent/:bikeId/:userId", (req, res) => {
+  res.json({ message: `Bike ${req.params.bikeId} rented by user ${req.params.userId}` });
+});
+
+// POST /api/v1/bike/rent-leave/:rentId
+router.post("/rent-leave/:rentId", (req, res) => {
+  res.json({ message: `Rent ${req.params.rentId} ended` });
+});
 
 module.exports = router;

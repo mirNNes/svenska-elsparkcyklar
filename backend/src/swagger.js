@@ -51,6 +51,7 @@ const swaggerSpec = {
         type: "object",
         properties: {
           id: { type: "number" },
+          username: { type: "string" },
           name: { type: "string" },
           email: { type: "string" },
           role: { type: "string", enum: ["user", "admin"] },
@@ -89,7 +90,7 @@ const swaggerSpec = {
   paths: {
     "/auth/login": {
       post: {
-        summary: "Logga in som admin",
+        summary: "Logga in (admin eller användare)",
         requestBody: {
           required: true,
           content: {
@@ -117,6 +118,47 @@ const swaggerSpec = {
             },
           },
           401: { description: "Fel inloggning" },
+        },
+      },
+    },
+    "/auth/signup": {
+      post: {
+        summary: "Skapa konto (roll: user)",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  email: { type: "string" },
+                  password: { type: "string" },
+                  username: { type: "string" },
+                },
+                required: ["name", "email", "password"],
+              },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: "Konto skapat",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    user: { $ref: "#/components/schemas/User" },
+                    access_token: { type: "string" },
+                    refresh_token: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: "Fel indata" },
+          409: { description: "E-post eller användarnamn upptaget" },
         },
       },
     },

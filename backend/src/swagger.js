@@ -246,6 +246,16 @@ const swaggerSpec = {
         },
       },
     },
+    "/ride/{id}": {
+      get: {
+        summary: "Hämta resa",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          200: { description: "OK" },
+          404: { description: "Hittades inte" },
+        },
+      },
+    },
     "/ride/end": {
       post: {
         summary: "Stoppa resa (kräver auth)",
@@ -264,6 +274,104 @@ const swaggerSpec = {
         responses: {
           200: { description: "Ride stoppad" },
           400: { description: "Fel indata" },
+        },
+      },
+    },
+    "/bike/rent/{bikeId}/{userId}": {
+      post: {
+        summary: "Starta uthyrning av cykel (kräver auth)",
+        parameters: [
+          { name: "bikeId", in: "path", required: true, schema: { type: "number" } },
+          { name: "userId", in: "path", required: true, schema: { type: "number" } },
+        ],
+        responses: {
+          201: { description: "Uthyrning startad" },
+          400: { description: "Fel indata" },
+          404: { description: "Bike eller user saknas" },
+        },
+      },
+    },
+    "/bike/rent-leave/{rentId}": {
+      post: {
+        summary: "Avsluta uthyrning (kräver auth)",
+        parameters: [{ name: "rentId", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          200: { description: "Uthyrning avslutad" },
+          400: { description: "Redan avslutad" },
+          404: { description: "Hittades inte" },
+        },
+      },
+    },
+    "/auth/refresh": {
+      post: {
+        summary: "Byt refresh-token mot nytt tokenpar",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: { refresh_token: { type: "string" } },
+                required: ["refresh_token"],
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Nytt tokenpar" },
+          400: { description: "Saknar token" },
+          401: { description: "Ogiltigt/spärrat token" },
+        },
+      },
+    },
+    "/auth/logout": {
+      post: {
+        summary: "Logga ut och spärrar refresh-token",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: { refresh_token: { type: "string" } },
+                required: ["refresh_token"],
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Utloggad" },
+          400: { description: "Saknar token" },
+        },
+      },
+    },
+    "/user": {
+      get: {
+        summary: "Lista användare (admin)",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: "OK" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+        },
+      },
+      post: {
+        summary: "Skapa användare (admin)",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/User" },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Skapad" },
+          400: { description: "Fel indata" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
         },
       },
     },

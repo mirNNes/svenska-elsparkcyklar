@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const requireAuth = require("../middleware/requireAuth");
+const userRepository = require("../repositories/userRepository");
 const {
   signAccessToken,
   signRefreshToken,
@@ -13,7 +14,7 @@ const refreshBlacklist = new Set();
 
 /**
  * POST /auth/login
- * Admin-only login using email + password
+ * Login för både användare och admin (email + password)
  */
 router.post("/login", async (req, res) => {
   const { email, password } = req.body || {};
@@ -26,11 +27,6 @@ router.post("/login", async (req, res) => {
 
   if (!user) {
     return res.status(401).json({ error: "Fel e-post eller lösenord" });
-  }
-
-  // Only allow admin logins
-  if (user.role !== "admin") {
-    return res.status(403).json({ error: "Endast administratörer får logga in" });
   }
 
   const valid = await bcrypt.compare(password, user.passwordHash);
@@ -83,7 +79,7 @@ router.post("/refresh", (req, res) => {
 
     return res.json({
       access_token: newAccess,
-      refresh_token: newRefresh,
+    refresh_token: newRefresh,
     });
   } catch (err) {
     return res.status(401).json({ error: "Ogiltigt refresh token" });
@@ -102,6 +98,58 @@ router.post("/logout", requireAuth, (req, res) => {
 
   refreshBlacklist.add(refresh_token);
   return res.json({ message: "Utloggad" });
+});
+
+/**
+ * POST /auth/signup - skapa nytt användarkonto (roll: user)
+ */
+router.post("/signup", async (req, res) => {
+  const { name, email, password, username } = req.body || {};
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: "name, email och password krävs" });
+  }
+
+  const existingEmail = await userRepository.getUserByEmail(email);
+  if (existingEmail) {
+    return res.status(409).json({ error: "E-postadressen är redan registrerad" });
+  }
+
+  if (username) {
+    const existingUsername = await userRepository.getUserByUsername(username);
+    if (existingUsername) {
+      return res.status(409).json({ error: "Användarnamnet är upptaget" });
+    }
+  }
+
+  const user = await userRepository.createUser({
+    name,
+    email,
+    username,
+    role: "user",
+    password,
+  });
+
+  const payload = {
+    id: user._id,
+    email: user.email,
+    role: user.role,
+  };
+
+  const access_token = signAccessToken(payload);
+  const refresh_token = signRefreshToken(payload);
+
+  return res.status(201).json({
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+    },
+    access_token,
+    refresh_token,
+  });
 });
 
 module.exports = router;

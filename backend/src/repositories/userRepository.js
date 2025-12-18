@@ -1,4 +1,5 @@
-// Repository för användare: ansvarar för CRUD i en in-memory-lista (inför byte till MongoDB).
+// Repository för användare: ansvarar för CRUD mot MongoDB (ersätter in-memory).
+const bcrypt = require("bcrypt");
 const User = require("../models/User");
 
 async function getAllUsers() {
@@ -9,10 +10,20 @@ async function getUserById(id) {
   return await User.findOne({ id });
 }
 
-async function createUser({ name, email, username, role, stats }) {
+async function getUserByEmail(email) {
+  return await User.findOne({ email });
+}
+
+async function getUserByUsername(username) {
+  return await User.findOne({ username });
+}
+
+async function createUser({ name, email, username, role, stats, password }) {
   // Räkna ut nästa id dynamiskt (behåller numeriskt id parallellt med Mongo _id)
   const lastUser = await User.findOne().sort({ id: -1 });
   const nextId = lastUser ? lastUser.id + 1 : 1;
+
+  const passwordHash = await bcrypt.hash(password || "changeme123", 10);
 
   const user = new User({
     id: nextId,
@@ -20,6 +31,7 @@ async function createUser({ name, email, username, role, stats }) {
     email,
     username,
     role,
+    passwordHash,
     stats,
   });
 
@@ -49,6 +61,8 @@ async function deleteUser(id) {
 module.exports = {
   getAllUsers,
   getUserById,
+  getUserByEmail,
+  getUserByUsername,
   createUser,
   updateUser,
   deleteUser,

@@ -70,3 +70,4 @@ api.interceptors.response.use(
 
 export const httpGet = (path) => api.get(path);
 export const httpPost = (path, body) => api.post(path, body);
+export { api };

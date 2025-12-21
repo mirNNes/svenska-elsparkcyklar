@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAllScooters } from "../api";
+import { getAllScooters } from "./api";
 
 export default function Dashboard() {
   const [scooters, setScooters] = useState([]);

@@ -26,8 +26,8 @@ export default function MapView() {
           getAllCities(),
         ]);
         if (!cancelled) {
-          setBikes(bikeRes.data || []);
-          setCities(cityRes.data || []);
+          setBikes(bikeRes || []);
+          setCities(cityRes || []);
         }
       } catch (err) {
         if (!cancelled) {

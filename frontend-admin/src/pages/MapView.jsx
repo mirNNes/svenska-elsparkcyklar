@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { getAllBikes } from "../api/bikes";
+import { getAllBikes, rentBike, returnBike } from "../api/bikes";
 import { getAllCities } from "../api/cities";
 import L from "leaflet";
 
@@ -26,8 +26,8 @@ export default function MapView() {
           getAllCities(),
         ]);
         if (!cancelled) {
-          setBikes(bikeRes.data || []);
-          setCities(cityRes.data || []);
+          setBikes(bikeRes || []);
+          setCities(cityRes || []);
         }
       } catch (err) {
         if (!cancelled) {
@@ -44,12 +44,39 @@ export default function MapView() {
   }, []);
 
   const defaultCenter = useMemo(() => {
-    // Använd första stadens center om den finns, annars mitten av Sverige
     if (cities.length > 0 && cities[0].center?.lat && cities[0].center?.lng) {
       return [cities[0].center.lat, cities[0].center.lng];
     }
     return [62.0, 15.0];
   }, [cities]);
+
+  const handleRent = async (bikeId) => {
+    try {
+      await rentBike(bikeId);
+      setBikes((prev) =>
+        prev.map((b) =>
+          b._id === bikeId ? { ...b, isAvailable: false } : b
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Kunde inte hyra cykeln");
+    }
+  };
+
+  const handleReturn = async (bikeId) => {
+    try {
+      await returnBike(bikeId);
+      setBikes((prev) =>
+        prev.map((b) =>
+          b._id === bikeId ? { ...b, isAvailable: true } : b
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Kunde inte återlämna cykeln");
+    }
+  };
 
   if (loading) return <div>Laddar karta...</div>;
   if (error) return <div style={{ color: "red" }}>{error}</div>;
@@ -79,6 +106,12 @@ export default function MapView() {
                 Status: {bike.isAvailable ? "Tillgänglig" : "Upptagen"}
                 <br />
                 Batteri: {bike.battery}%
+                <br />
+                {bike.isAvailable ? (
+                  <button onClick={() => handleRent(bike._id)}>Hyr</button>
+                ) : (
+                  <button onClick={() => handleReturn(bike._id)}>Återlämna</button>
+                )}
               </div>
             </Popup>
           </Marker>

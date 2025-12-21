@@ -40,3 +40,23 @@
 .read-the-docs {
   color: #888;
 }
+.dashboard .stats {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.scooter-list {
+  list-style: none;
+  padding: 0;
+}
+
+.scooter-item {
+  margin-bottom: 10px;
+}

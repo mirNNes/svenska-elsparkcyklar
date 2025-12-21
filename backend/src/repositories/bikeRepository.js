@@ -2,6 +2,14 @@
 const Bike = require("../models/Bike");
 const rentRepository = require("./rentRepository");
 
+function getRandomLocation(center) {
+  const baseLat = Number.isFinite(center?.lat) ? center.lat : 0;
+  const baseLng = Number.isFinite(center?.lng) ? center.lng : 0;
+  const deltaLat = (Math.random() - 0.5) * 0.01;
+  const deltaLng = (Math.random() - 0.5) * 0.01;
+  return { lat: baseLat + deltaLat, lng: baseLng + deltaLng };
+}
+
 async function getAllBikes() {
   return await Bike.find();
 }
@@ -22,6 +30,50 @@ async function createBike({ cityId }) {
 
   await bike.save();
   return bike;
+}
+
+async function getSimulationBikesByCity(cityId) {
+  return await Bike.find({ cityId, isSimulation: true });
+}
+
+async function createSimulationBikes({ cityId, count, center }) {
+  if (!count || count <= 0) return [];
+
+  const lastBike = await Bike.findOne().sort({ id: -1 });
+  let nextId = lastBike ? lastBike.id + 1 : 1;
+
+  const bikes = [];
+  for (let i = 0; i < count; i += 1) {
+    bikes.push({
+      id: nextId++,
+      cityId,
+      isAvailable: true,
+      isSimulation: true,
+      battery: 100,
+      location: getRandomLocation(center),
+    });
+  }
+
+  return await Bike.insertMany(bikes);
+}
+
+async function bulkUpdateSimulationBikes(bikes) {
+  if (!bikes.length) return;
+
+  const ops = bikes.map((bike) => ({
+    updateOne: {
+      filter: { _id: bike._id },
+      update: {
+        $set: {
+          location: bike.location,
+          battery: bike.battery,
+          isAvailable: bike.isAvailable,
+        },
+      },
+    },
+  }));
+
+  await Bike.bulkWrite(ops);
 }
 
 async function deleteBike(id) {
@@ -84,4 +136,7 @@ module.exports = {
   markBikeAsUnavailable,
   markBikeAsAvailable,
   markBikeAsAvailableByObjectId,
+  getSimulationBikesByCity,
+  createSimulationBikes,
+  bulkUpdateSimulationBikes,
 };

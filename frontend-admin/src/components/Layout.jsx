@@ -216,7 +216,7 @@ export default function Layout({ children, onLogout, accessToken, user }) {
           flexGrow: 1,
           p: 3,
           mt: 8,
-          ...(isMobile ? { ml: 0 } : { ml: `${drawerWidth}px` }),
+          ...(isMobile ? { ml: 0 } : { ml: "20px" }),
         }}
       >
         {React.Children.map(children, child => 

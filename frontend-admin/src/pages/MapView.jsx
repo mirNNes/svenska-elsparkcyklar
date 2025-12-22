@@ -7,7 +7,7 @@ import L from "leaflet";
 
 const bikeIcon = new L.Icon({
   iconUrl: "/scooter.png",
-  iconSize: [32, 32],
+  iconSize: [52, 52],
   iconAnchor: [16, 32],
 });
 
@@ -18,10 +18,12 @@ const LOW_BATTERY_THRESHOLD = 30;
  * Körs när "boundsKey" ändras (dvs när filter eller data ändras),
  * inte när man bara väljer en cykel i listan.
  */
-function FitBounds({ bikes, boundsKey }) {
+function FitBounds({ bikes, boundsKey, isBikeSelected }) {
   const map = useMap();
 
   useEffect(() => {
+    if (isBikeSelected) return;
+
     const points = bikes
       .map((b) => [b.location?.lat, b.location?.lng])
       .filter(([lat, lng]) => typeof lat === "number" && typeof lng === "number");
@@ -30,23 +32,34 @@ function FitBounds({ bikes, boundsKey }) {
 
     const bounds = L.latLngBounds(points);
     map.fitBounds(bounds, { padding: [40, 40] });
-  }, [bikes, boundsKey, map]);
+  }, [bikes, boundsKey, map, isBikeSelected]);
 
   return null;
 }
 
 /** Zooma till vald cykel (körs vid klick i listan). */
-function FlyToBike({ bike }) {
+function FlyToBike({ bike, setPauseFitBounds, markerRefs }) {
   const map = useMap();
 
   useEffect(() => {
     if (!bike) return;
+
     const lat = bike.location?.lat;
     const lng = bike.location?.lng;
     if (typeof lat !== "number" || typeof lng !== "number") return;
 
-    map.setView([lat, lng], Math.max(map.getZoom(), 15), { animate: true });
-  }, [bike, map]);
+    setPauseFitBounds(true);
+
+    map.flyTo([lat, lng], 15, {
+      animate: true,
+      duration: 0.6,
+    });
+
+    map.once("moveend", () => {
+      const marker = markerRefs.current[bike._id];
+      marker?.openPopup();
+    });
+  }, [bike, map, setPauseFitBounds, markerRefs]);
 
   return null;
 }
@@ -88,7 +101,7 @@ function BikeSideList({ bikes, selectedId, onSelect }) {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Sök id…"
         style={{
-          width: "100%",
+          width: "90%",
           padding: "8px 10px",
           borderRadius: 8,
           border: "1px solid #ccc",
@@ -96,7 +109,7 @@ function BikeSideList({ bikes, selectedId, onSelect }) {
         }}
       />
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
         {list.map((b) => {
           const isSelected = selectedId === b._id;
           const battery = b.battery ?? 0;
@@ -114,7 +127,7 @@ function BikeSideList({ bikes, selectedId, onSelect }) {
                 cursor: "pointer",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, color: "black" }}>
                 <strong>Bike #{b.id}</strong>
                 <span style={{ opacity: 0.8 }}>{battery}%</span>
               </div>
@@ -136,6 +149,9 @@ export default function MapView() {
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const markerRefs = useRef({});
+  const [isBikeSelected, setIsBikeSelected] = useState(false);
+  const [pauseFitBounds, setPauseFitBounds] = useState(false);
 
   // Filters
   const [onlyAvailable, setOnlyAvailable] = useState(false);
@@ -146,6 +162,12 @@ export default function MapView() {
 
   // Key that triggers FitBounds (data/filters change)
   const boundsKeyRef = useRef(0);
+
+  useEffect(() => {
+    if (!selectedBikeId) {
+      setPauseFitBounds(false);
+    }
+  }, [selectedBikeId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -197,10 +219,11 @@ export default function MapView() {
 
   // bump boundsKey when filters/data changes
   const boundsKey = useMemo(() => {
+    if (pauseFitBounds) return boundsKeyRef.current;
+    
     boundsKeyRef.current += 1;
     return boundsKeyRef.current;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredBikes.length, onlyAvailable, onlyLowBattery]);
+  }, [filteredBikes.length, onlyAvailable, onlyLowBattery, pauseFitBounds]);
 
   const selectedBike = useMemo(() => {
     return filteredBikes.find((b) => b._id === selectedBikeId) || null;
@@ -254,6 +277,7 @@ export default function MapView() {
             onChange={(e) => {
               setOnlyAvailable(e.target.checked);
               setSelectedBikeId(null);
+              setIsBikeSelected(false);
             }}
           />
           Visa bara lediga
@@ -266,6 +290,7 @@ export default function MapView() {
             onChange={(e) => {
               setOnlyLowBattery(e.target.checked);
               setSelectedBikeId(null);
+              setIsBikeSelected(false);
             }}
           />
           Visa bara låg batteri (&lt; {LOW_BATTERY_THRESHOLD}%)
@@ -292,7 +317,10 @@ export default function MapView() {
         <BikeSideList
           bikes={filteredBikes}
           selectedId={selectedBikeId}
-          onSelect={setSelectedBikeId}
+          onSelect={(bikeId) => {
+            setSelectedBikeId(bikeId);
+            setIsBikeSelected(true);
+          }}
         />
 
         <div style={{ flex: 1 }}>
@@ -302,8 +330,12 @@ export default function MapView() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
             />
 
-            <FitBounds bikes={filteredBikes} boundsKey={boundsKey} />
-            <FlyToBike bike={selectedBike} />
+            <FitBounds bikes={filteredBikes} boundsKey={boundsKey} isBikeSelected={isBikeSelected} />
+            <FlyToBike
+              bike={selectedBike}
+              setPauseFitBounds={setPauseFitBounds}
+              markerRefs={markerRefs}
+            />
 
             {filteredBikes.map((bike) => {
               const lat = bike.location?.lat;
@@ -313,7 +345,14 @@ export default function MapView() {
               const battery = bike.battery ?? 0;
 
               return (
-                <Marker key={bike._id} position={[lat, lng]} icon={bikeIcon}>
+                <Marker 
+                  key={bike._id} 
+                  position={[lat, lng]} 
+                  icon={bikeIcon}
+                  ref={(ref) => { 
+                    if (ref) markerRefs.current[bike._id] = ref; 
+                  }}
+                >
                   <Popup>
                     <div>
                       <strong>Bike #{bike.id}</strong>

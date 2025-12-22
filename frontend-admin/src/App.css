@@ -123,3 +123,6 @@ span {
   text-align: center;
 }
 
+.leaflet-popup-content-wrapper {
+  margin-bottom: 15px;
+}

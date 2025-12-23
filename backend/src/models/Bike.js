@@ -4,6 +4,8 @@ const bikeSchema = new mongoose.Schema({
   id: { type: Number, required: true, unique: true },
   battery: { type: Number, default: 100 },
   isAvailable: { type: Boolean, default: true },
+  // Markerar cyklar som skapats för simulering
+  isSimulation: { type: Boolean, default: false },
   // Mongo-referenskoppling till vilken stad cykeln hör till
   cityId: { type: mongoose.Schema.Types.ObjectId, ref: "City", default: null },
   location: {

@@ -17,6 +17,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { io } from 'socket.io-client';
 
 const drawerWidth = 240;
+export const BikeUpdatesContext = React.createContext({});
 
 export default function Layout({ children, onLogout, accessToken, user }) {
   const location = useLocation();
@@ -219,9 +220,12 @@ export default function Layout({ children, onLogout, accessToken, user }) {
           ...(isMobile ? { ml: 0 } : { ml: "20px" }),
         }}
       >
-        {React.Children.map(children, child => 
-          React.cloneElement(child, { bikeUpdates })
-        )}
+        {/* Gör socket-uppdateringar tillgängliga för alla sidor */}
+        <BikeUpdatesContext.Provider value={bikeUpdates}>
+          {React.Children.map(children, child =>
+            React.cloneElement(child, { bikeUpdates })
+          )}
+        </BikeUpdatesContext.Provider>
       </Box>
     </Box>
   );

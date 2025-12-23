@@ -20,4 +20,8 @@ router.post("/rent-leave/:rentId", requireAuth, bikeController.endRent);
 // Telemetri från "cykelprogrammet" (skyddat)
 router.patch("/:id/telemetry", requireAuth, requireRole("admin"), bikeController.updateTelemetry);
 
+// Stäng av / slå på cykel (admin)
+router.post("/:id/disable", requireAuth, requireRole("admin"), bikeController.disableBike);
+router.post("/:id/enable", requireAuth, requireRole("admin"), bikeController.enableBike);
+
 module.exports = router;

@@ -18,6 +18,8 @@ async function startRide(req, res) {
 
   if (!user) return res.status(404).json({ error: "User not found" });
   if (!bike) return res.status(404).json({ error: "Bike not found" });
+  if (bike.isOperational === false) return res.status(400).json({ error: "Bike is disabled" });
+  if (bike.isInService === true) return res.status(400).json({ error: "Bike is in service" });
   if (!bike.isAvailable)
     return res.status(400).json({ error: "Bike already rented" });
 

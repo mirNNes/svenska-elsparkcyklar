@@ -42,6 +42,8 @@ async function startRent(req, res) {
   if (!Number.isInteger(userId) || userId <= 0) return res.status(400).json({ error: "Ogiltigt userId" });
   if (!user) return res.status(404).json({ error: "User not found" });
   if (!bike) return res.status(404).json({ error: "Bike not found" });
+  if (bike.isOperational === false) return res.status(400).json({ error: "Bike is disabled" });
+  if (bike.isInService === true) return res.status(400).json({ error: "Bike is in service" });
   if (!bike.isAvailable) return res.status(400).json({ error: "Bike already rented" });
 
   const rent = await bikeRepository.startRent(bikeId, userId);
@@ -64,7 +66,7 @@ async function updateTelemetry(req, res) {
   const id = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(id)) return res.status(400).json({ error: "Ogiltigt bikeId" });
 
-  const { location, battery, isAvailable } = req.body || {};
+  const { location, battery, isAvailable, speed, isOperational, isInService } = req.body || {};
   const updates = {};
 
   if (location !== undefined) {
@@ -91,9 +93,33 @@ async function updateTelemetry(req, res) {
     updates.isAvailable = isAvailable;
   }
 
+  if (speed !== undefined) {
+    const speedValue = Number(speed);
+    if (!Number.isFinite(speedValue) || speedValue < 0) {
+      return res.status(400).json({ error: "Ogiltig speed" });
+    }
+    updates.speed = speedValue;
+  }
+
+  if (isOperational !== undefined) {
+    if (typeof isOperational !== "boolean") {
+      return res.status(400).json({ error: "isOperational måste vara boolean" });
+    }
+    updates.isOperational = isOperational;
+  }
+
+  if (isInService !== undefined) {
+    if (typeof isInService !== "boolean") {
+      return res.status(400).json({ error: "isInService måste vara boolean" });
+    }
+    updates.isInService = isInService;
+  }
+
   if (!Object.keys(updates).length) {
     return res.status(400).json({ error: "Inga fält att uppdatera" });
   }
+
+  updates.lastTelemetryAt = new Date();
 
   const updatedBike = await bikeRepository.updateBikeTelemetry(id, updates);
   if (!updatedBike) return res.status(404).json({ error: "Bike not found" });
@@ -106,9 +132,33 @@ async function updateTelemetry(req, res) {
       location: updatedBike.location,
       battery: updatedBike.battery,
       isAvailable: updatedBike.isAvailable,
+      speed: updatedBike.speed,
+      isOperational: updatedBike.isOperational,
+      isInService: updatedBike.isInService,
+      lastTelemetryAt: updatedBike.lastTelemetryAt,
       updatedAt: new Date().toISOString(),
     });
   }
+
+  return res.json(updatedBike);
+}
+
+async function disableBike(req, res) {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: "Ogiltigt bikeId" });
+
+  const updatedBike = await bikeRepository.updateBikeTelemetry(id, { isOperational: false });
+  if (!updatedBike) return res.status(404).json({ error: "Bike not found" });
+
+  return res.json(updatedBike);
+}
+
+async function enableBike(req, res) {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: "Ogiltigt bikeId" });
+
+  const updatedBike = await bikeRepository.updateBikeTelemetry(id, { isOperational: true, isInService: false });
+  if (!updatedBike) return res.status(404).json({ error: "Bike not found" });
 
   return res.json(updatedBike);
 }
@@ -121,4 +171,6 @@ module.exports = {
   startRent,
   endRent,
   updateTelemetry,
+  disableBike,
+  enableBike,
 };

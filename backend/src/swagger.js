@@ -252,6 +252,41 @@ const swaggerSpec = {
         },
       },
     },
+    "/bike/{id}/telemetry": {
+      patch: {
+        summary: "Uppdatera cykel-telemetri (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  location: {
+                    type: "object",
+                    properties: {
+                      lat: { type: "number" },
+                      lng: { type: "number" },
+                    },
+                  },
+                  battery: { type: "number" },
+                  isAvailable: { type: "boolean" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Uppdaterad" },
+          400: { description: "Fel indata" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Hittades inte" },
+        },
+      },
+    },
     "/city": {
       get: {
         summary: "Lista alla städer",

@@ -79,6 +79,18 @@ async function getRidesByUserId(userId) {
   return await Ride.find({ userId: user._id });
 }
 
+async function getRidesByUserObjectId(userObjectId) {
+  return await Ride.find({ userId: userObjectId });
+}
+
+async function getActiveRideByUserObjectId(userObjectId) {
+  return await Ride.findOne({ userId: userObjectId, endedAt: null });
+}
+
+async function getActiveRideByBikeObjectId(bikeObjectId) {
+  return await Ride.findOne({ bikeId: bikeObjectId, endedAt: null });
+}
+
 async function startRide(bikeId, userId) {
   // Hämta bike och user via deras numeriska id och använd deras _id som referens
   const bike = await Bike.findOne({ id: bikeId });
@@ -161,6 +173,9 @@ async function endRide(rideId) {
 module.exports = {
   getRideById,
   getRidesByUserId,
+  getRidesByUserObjectId,
+  getActiveRideByUserObjectId,
+  getActiveRideByBikeObjectId,
   startRide,
   endRide,
 };

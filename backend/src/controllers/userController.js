@@ -73,6 +73,23 @@ async function deleteUser(req, res) {
   res.status(204).send();
 }
 
+// POST /user/:id/topup - fyll på saldo
+async function topUpBalance(req, res) {
+  const id = Number.parseInt(req.params.id, 10);
+  const { amount } = req.body || {};
+
+  if (!Number.isInteger(id)) return res.status(400).json({ error: "Ogiltigt userId" });
+  const parsedAmount = Number(amount);
+  if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+    return res.status(400).json({ error: "amount måste vara ett positivt tal" });
+  }
+
+  const updatedUser = await userRepository.addBalance(id, parsedAmount);
+  if (!updatedUser) return res.status(404).json({ error: "User not found" });
+
+  res.json(updatedUser);
+}
+
 module.exports = {
   getAllUsers,
   getUserById,
@@ -80,4 +97,5 @@ module.exports = {
   updateUser,
   patchUser,
   deleteUser,
+  topUpBalance,
 };

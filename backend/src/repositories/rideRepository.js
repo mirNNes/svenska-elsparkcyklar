@@ -5,11 +5,16 @@ const Bike = require("../models/Bike");
 const User = require("../models/User");
 const stationRepository = require("./stationRepository");
 const parkingZoneRepository = require("./parkingZoneRepository");
+const invoiceRepository = require("./invoiceRepository");
 
 const BASE_PRICE = 10;
 const PRICE_PER_MINUTE = 2;
 const FREE_PARKING_FEE = 10;
 const STATION_RADIUS_METERS = 50;
+
+function roundMoney(value) {
+  return Math.round(value * 100) / 100;
+}
 
 // Enkel avståndsberäkning i meter (räcker för små ytor i en stad).
 function distanceMeters(a, b) {
@@ -133,10 +138,23 @@ async function endRide(rideId) {
   const parking = await getParkingInfo(bike);
   ride.parkingType = parking.type;
   ride.parkingFee = parking.fee;
-  ride.price =
-    Math.round((BASE_PRICE + PRICE_PER_MINUTE * durationMinutes + parking.fee) * 100) / 100;
+  ride.price = roundMoney(BASE_PRICE + PRICE_PER_MINUTE * durationMinutes + parking.fee);
 
   await ride.save();
+
+  // Dra från saldo om möjligt, annars skapa faktura
+  const user = await User.findById(ride.userId);
+  if (user && Number.isFinite(user.balance) && user.balance >= ride.price) {
+    user.balance = roundMoney(user.balance - ride.price);
+    await user.save();
+  } else {
+    await invoiceRepository.createInvoice({
+      userId: ride.userId,
+      rideId: ride._id,
+      amount: ride.price,
+    });
+  }
+
   return { ride };
 }
 

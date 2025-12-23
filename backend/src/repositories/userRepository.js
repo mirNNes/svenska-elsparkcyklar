@@ -10,6 +10,10 @@ async function getUserById(id) {
   return await User.findOne({ id });
 }
 
+async function getUserByObjectId(objectId) {
+  return await User.findById(objectId);
+}
+
 async function getUserByEmail(email) {
   return await User.findOne({ email });
 }
@@ -53,6 +57,23 @@ async function updateUser(id, updates) {
   return user;
 }
 
+async function addBalance(id, amount) {
+  const user = await User.findOne({ id });
+  if (!user) return null;
+
+  user.balance = Math.round((user.balance + amount) * 100) / 100;
+  await user.save();
+  return user;
+}
+
+async function updateBalanceByObjectId(objectId, newBalance) {
+  return await User.findByIdAndUpdate(
+    objectId,
+    { balance: newBalance },
+    { new: true }
+  );
+}
+
 async function deleteUser(id) {
   const result = await User.deleteOne({ id });
   return result.deletedCount > 0;
@@ -61,9 +82,12 @@ async function deleteUser(id) {
 module.exports = {
   getAllUsers,
   getUserById,
+  getUserByObjectId,
   getUserByEmail,
   getUserByUsername,
   createUser,
   updateUser,
+  addBalance,
+  updateBalanceByObjectId,
   deleteUser,
 };

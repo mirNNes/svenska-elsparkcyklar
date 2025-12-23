@@ -1,5 +1,6 @@
 const express = require("express");
 const requireAuth = require("../middleware/requireAuth");
+const { requireRole } = require("../middleware/requireAuth");
 const bikeController = require("../controllers/bikeController");
 
 const router = express.Router();
@@ -15,5 +16,8 @@ router.delete("/:id", requireAuth, bikeController.deleteBike);
 // Starta/avsluta uthyrning (skyddat)
 router.post("/rent/:bikeId/:userId", requireAuth, bikeController.startRent);
 router.post("/rent-leave/:rentId", requireAuth, bikeController.endRent);
+
+// Telemetri från "cykelprogrammet" (skyddat)
+router.patch("/:id/telemetry", requireAuth, requireRole("admin"), bikeController.updateTelemetry);
 
 module.exports = router;

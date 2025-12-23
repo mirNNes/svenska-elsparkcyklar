@@ -76,6 +76,15 @@ async function bulkUpdateSimulationBikes(bikes) {
   await Bike.bulkWrite(ops);
 }
 
+// Uppdatera position/batteri för en cykel (t.ex. telemetri).
+async function updateBikeTelemetry(id, updates) {
+  return await Bike.findOneAndUpdate(
+    { id },
+    { $set: updates },
+    { new: true }
+  );
+}
+
 // Ta bort alla simuleringscyklar när simuleringen stoppas.
 async function deleteSimulationBikes() {
   const result = await Bike.deleteMany({ isSimulation: true });
@@ -145,5 +154,6 @@ module.exports = {
   getSimulationBikesByCity,
   createSimulationBikes,
   bulkUpdateSimulationBikes,
+  updateBikeTelemetry,
   deleteSimulationBikes,
 };

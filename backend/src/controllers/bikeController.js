@@ -60,6 +60,59 @@ async function endRent(req, res) {
   res.json(ended);
 }
 
+async function updateTelemetry(req, res) {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: "Ogiltigt bikeId" });
+
+  const { location, battery, isAvailable } = req.body || {};
+  const updates = {};
+
+  if (location !== undefined) {
+    const lat = Number(location?.lat);
+    const lng = Number(location?.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return res.status(400).json({ error: "Ogiltig location" });
+    }
+    updates.location = { lat, lng };
+  }
+
+  if (battery !== undefined) {
+    const batteryValue = Number(battery);
+    if (!Number.isFinite(batteryValue) || batteryValue < 0 || batteryValue > 100) {
+      return res.status(400).json({ error: "Ogiltigt batteri" });
+    }
+    updates.battery = batteryValue;
+  }
+
+  if (isAvailable !== undefined) {
+    if (typeof isAvailable !== "boolean") {
+      return res.status(400).json({ error: "isAvailable måste vara boolean" });
+    }
+    updates.isAvailable = isAvailable;
+  }
+
+  if (!Object.keys(updates).length) {
+    return res.status(400).json({ error: "Inga fält att uppdatera" });
+  }
+
+  const updatedBike = await bikeRepository.updateBikeTelemetry(id, updates);
+  if (!updatedBike) return res.status(404).json({ error: "Bike not found" });
+
+  const io = req.app.get("io");
+  if (io) {
+    io.emit("bike-update", {
+      id: updatedBike.id,
+      cityId: updatedBike.cityId,
+      location: updatedBike.location,
+      battery: updatedBike.battery,
+      isAvailable: updatedBike.isAvailable,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  return res.json(updatedBike);
+}
+
 module.exports = {
   getAllBikes,
   getBikeById,
@@ -67,4 +120,5 @@ module.exports = {
   deleteBike,
   startRent,
   endRent,
+  updateTelemetry,
 };

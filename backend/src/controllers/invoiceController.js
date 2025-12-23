@@ -27,6 +27,18 @@ async function getInvoicesByUser(req, res) {
   res.json(invoices);
 }
 
+// GET /invoice/me - lista fakturor för inloggad användare
+async function getMyInvoices(req, res) {
+  const userObjectId = req.user?.id;
+  if (!userObjectId) return res.status(401).json({ error: "Unauthorized" });
+
+  const user = await userRepository.getUserByObjectId(userObjectId);
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  const invoices = await invoiceRepository.getInvoicesByUserId(user._id);
+  res.json(invoices);
+}
+
 // POST /invoice/:id/pay - markera som betald om saldo räcker
 async function payInvoice(req, res) {
   const id = Number.parseInt(req.params.id, 10);
@@ -54,5 +66,6 @@ module.exports = {
   getAllInvoices,
   getInvoiceById,
   getInvoicesByUser,
+  getMyInvoices,
   payInvoice,
 };

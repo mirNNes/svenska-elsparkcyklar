@@ -713,6 +713,23 @@ const swaggerSpec = {
         },
       },
     },
+    "/invoice/me": {
+      get: {
+        summary: "Lista egna fakturor (inloggad användare)",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: "OK",
+            content: {
+              "application/json": {
+                schema: { type: "array", items: { $ref: "#/components/schemas/Invoice" } },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+        },
+      },
+    },
     "/invoice/{id}": {
       get: {
         summary: "Hämta faktura (admin)",

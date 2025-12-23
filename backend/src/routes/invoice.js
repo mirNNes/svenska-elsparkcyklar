@@ -7,6 +7,9 @@ const router = express.Router();
 
 // Lista fakturor (admin)
 router.get("/", requireAuth, requireRole("admin"), invoiceController.getAllInvoices);
+// Fakturor för inloggad användare
+router.get("/me", requireAuth, invoiceController.getMyInvoices);
+// Fakturor för specifik användare (admin)
 router.get("/user/:userId", requireAuth, requireRole("admin"), invoiceController.getInvoicesByUser);
 router.get("/:id", requireAuth, requireRole("admin"), invoiceController.getInvoiceById);
 

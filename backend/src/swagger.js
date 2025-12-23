@@ -104,6 +104,7 @@ const swaggerSpec = {
           name: { type: "string" },
           email: { type: "string" },
           role: { type: "string", enum: ["user", "admin"] },
+          balance: { type: "number" },
         },
       },
       Ride: {
@@ -126,6 +127,18 @@ const swaggerSpec = {
         properties: {
           access_token: { type: "string" },
           refresh_token: { type: "string" },
+        },
+      },
+      Invoice: {
+        type: "object",
+        properties: {
+          id: { type: "number" },
+          userId: { type: "string" },
+          rideId: { type: "string" },
+          amount: { type: "number" },
+          status: { type: "string", enum: ["paid", "unpaid"] },
+          createdAt: { type: "string", format: "date-time" },
+          paidAt: { type: "string", format: "date-time", nullable: true },
         },
       },
     },
@@ -653,6 +666,86 @@ const swaggerSpec = {
           400: { description: "Fel indata" },
           401: { description: "Unauthorized" },
           403: { description: "Forbidden" },
+        },
+      },
+    },
+    "/user/{id}/topup": {
+      post: {
+        summary: "Fyll på saldo (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: { amount: { type: "number" } },
+                required: ["amount"],
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Saldo uppdaterat" },
+          400: { description: "Fel indata" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Hittades inte" },
+        },
+      },
+    },
+    "/invoice": {
+      get: {
+        summary: "Lista alla fakturor (admin)",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: "OK",
+            content: {
+              "application/json": {
+                schema: { type: "array", items: { $ref: "#/components/schemas/Invoice" } },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+        },
+      },
+    },
+    "/invoice/{id}": {
+      get: {
+        summary: "Hämta faktura (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          200: { description: "OK" },
+          404: { description: "Hittades inte" },
+        },
+      },
+    },
+    "/invoice/user/{userId}": {
+      get: {
+        summary: "Lista fakturor för användare (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "userId", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          200: { description: "OK" },
+          404: { description: "Hittades inte" },
+        },
+      },
+    },
+    "/invoice/{id}/pay": {
+      post: {
+        summary: "Betala faktura med saldo (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          200: { description: "Betald" },
+          400: { description: "Fel indata eller saldo saknas" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Hittades inte" },
         },
       },
     },

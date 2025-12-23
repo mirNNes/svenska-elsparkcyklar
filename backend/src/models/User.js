@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
   // Roller för att skilja på om det är anvädnare eller admin
   role: { type: String, enum: ["user", "admin"], default: "user" },
   // Användarens saldo (prepaid)
-  balance: { type: Number, default: 0 },
+  balance: { type: Number, default: 100 },
   // Anändarens statistik
   stats: {
     distance: { type: Number, default: 0 }, // meter

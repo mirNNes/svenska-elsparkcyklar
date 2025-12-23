@@ -10,6 +10,7 @@ const adminRouter = require('./admin');
 const stationRouter = require('./station');
 const parkingZoneRouter = require('./parkingZone');
 const allowedZoneRouter = require('./allowedZone');
+const invoiceRouter = require('./invoice');
 
 const router = express.Router();
 
@@ -28,5 +29,6 @@ router.use('/admin', adminRouter);
 router.use('/station', stationRouter);
 router.use('/parking-zone', parkingZoneRouter);
 router.use('/allowed-zone', allowedZoneRouter);
+router.use('/invoice', invoiceRouter);
 
 module.exports = router;

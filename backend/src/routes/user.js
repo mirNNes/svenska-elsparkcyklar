@@ -12,5 +12,6 @@ router.post("/", requireAuth, requireRole("admin"), userController.createUser);
 router.put("/:id", requireAuth, requireRole("admin"), userController.updateUser);
 router.patch("/:id", requireAuth, requireRole("admin"), userController.patchUser);
 router.delete("/:id", requireAuth, requireRole("admin"), userController.deleteUser);
+router.post("/:id/topup", requireAuth, requireRole("admin"), userController.topUpBalance);
 
 module.exports = router;

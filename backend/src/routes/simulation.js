@@ -47,11 +47,16 @@ function getInitialVelocity() {
 }
 
 function getNextMovement(bike, center) {
-  const baseLat = Number.isFinite(bike.location?.lat) ? bike.location.lat : center.lat || 0;
-  const baseLng = Number.isFinite(bike.location?.lng) ? bike.location.lng : center.lng || 0;
+  const baseLat = Number.isFinite(bike.location?.lat)
+    ? bike.location.lat
+    : center.lat || 0;
+  const baseLng = Number.isFinite(bike.location?.lng)
+    ? bike.location.lng
+    : center.lng || 0;
 
   const currentVelocity = bike.velocity || getInitialVelocity();
-  const speed = Math.sqrt(currentVelocity.lat ** 2 + currentVelocity.lng ** 2) || STEP_SIZE;
+  const speed =
+    Math.sqrt(currentVelocity.lat ** 2 + currentVelocity.lng ** 2) || STEP_SIZE;
 
   // Små svängar så att cykeln håller riktning en stund innan den byter.
   const turn = (Math.random() - 0.5) * TURN_RATE;
@@ -98,13 +103,14 @@ async function prepareSimulation(bikesPerCity) {
     const existing = await bikeRepository.getSimulationBikesByCity(city._id);
     const missing = Math.max(0, bikesPerCity - existing.length);
 
-    const created = missing > 0
-      ? await bikeRepository.createSimulationBikes({
-          cityId: city._id,
-          count: missing,
-          center: city.center,
-        })
-      : [];
+    const created =
+      missing > 0
+        ? await bikeRepository.createSimulationBikes({
+            cityId: city._id,
+            count: missing,
+            center: city.center,
+          })
+        : [];
 
     existing.forEach((bike) => bikes.push(normalizeBike(bike)));
     created.forEach((bike) => bikes.push(normalizeBike(bike)));
@@ -121,9 +127,10 @@ async function prepareSimulation(bikesPerCity) {
 router.post("/start", requireAuth, requireRole("admin"), async (req, res) => {
   const { count } = req.body || {};
   const parsedCount = Number.parseInt(count, 10);
-  const bikesPerCity = Number.isFinite(parsedCount) && parsedCount > 0
-    ? parsedCount
-    : DEFAULT_BIKES_PER_CITY;
+  const bikesPerCity =
+    Number.isFinite(parsedCount) && parsedCount > 0
+      ? parsedCount
+      : DEFAULT_BIKES_PER_CITY;
 
   if (simulation.running) {
     // Tillåt omstart genom att stoppa innan vi startar om.
@@ -148,11 +155,32 @@ router.post("/start", requireAuth, requireRole("admin"), async (req, res) => {
     try {
       const updatedBikes = simulation.bikes.map((bike) => {
         const center = getCenterForCity(simulation.cityCenters, bike.cityId);
-        const { nextLocation, nextVelocity } = getNextMovement(bike, center);
-        const nextBattery = Math.max(
-          0,
-          (Number.isFinite(bike.battery) ? bike.battery : 100) - Math.random() * 1.5
-        );
+        const baseLocation =
+          Number.isFinite(bike.location?.lat) &&
+          Number.isFinite(bike.location?.lng)
+            ? bike.location
+            : center;
+        const currentBattery = Number.isFinite(bike.battery)
+          ? bike.battery
+          : 100;
+        const nextBattery = Math.max(0, currentBattery - Math.random() * 1.5);
+        let nextLocation = baseLocation;
+        let nextVelocity = bike.velocity || { lat: 0, lng: 0 };
+        let speed = 0;
+        const isAvailable = nextBattery > 0 ? bike.isAvailable : false;
+
+        if (nextBattery > 0) {
+          const movement = getNextMovement(bike, center);
+          nextLocation = movement.nextLocation;
+          nextVelocity = movement.nextVelocity;
+          speed = Math.round(
+            Math.sqrt(nextVelocity.lat ** 2 + nextVelocity.lng ** 2) * 111000
+          );
+        } else {
+          // Om batteriet är slut så står cykeln still
+          nextVelocity = { lat: 0, lng: 0 };
+        }
+
         const updatedAt = new Date().toISOString();
 
         return {
@@ -160,6 +188,9 @@ router.post("/start", requireAuth, requireRole("admin"), async (req, res) => {
           location: nextLocation,
           velocity: nextVelocity,
           battery: nextBattery,
+          isAvailable,
+          speed,
+          lastTelemetryAt: updatedAt,
           updatedAt,
         };
       });
@@ -174,6 +205,10 @@ router.post("/start", requireAuth, requireRole("admin"), async (req, res) => {
             location: bike.location,
             battery: bike.battery,
             isAvailable: bike.isAvailable,
+            speed: bike.speed,
+            isOperational: bike.isOperational,
+            isInService: bike.isInService,
+            lastTelemetryAt: bike.lastTelemetryAt,
             updatedAt: bike.updatedAt,
           });
         });

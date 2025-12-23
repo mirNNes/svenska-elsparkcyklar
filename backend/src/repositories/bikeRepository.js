@@ -76,6 +76,12 @@ async function bulkUpdateSimulationBikes(bikes) {
   await Bike.bulkWrite(ops);
 }
 
+// Ta bort alla simuleringscyklar när simuleringen stoppas.
+async function deleteSimulationBikes() {
+  const result = await Bike.deleteMany({ isSimulation: true });
+  return result.deletedCount || 0;
+}
+
 async function deleteBike(id) {
   const bike = await Bike.findOne({ id });
   if (!bike) return { success: false, reason: "not_found" };
@@ -139,4 +145,5 @@ module.exports = {
   getSimulationBikesByCity,
   createSimulationBikes,
   bulkUpdateSimulationBikes,
+  deleteSimulationBikes,
 };

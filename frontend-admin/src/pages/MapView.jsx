@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useContext, useEffect, useMemo, useState, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { getAllBikes, rentBike, returnBike } from "../api/bikes";
 import { getAllCities } from "../api/cities";
+import { BikeUpdatesContext } from "../components/Layout";
 import L from "leaflet";
 
 const bikeIcon = new L.Icon({
@@ -32,7 +33,8 @@ function FitBounds({ bikes, boundsKey, isBikeSelected }) {
 
     const bounds = L.latLngBounds(points);
     map.fitBounds(bounds, { padding: [40, 40] });
-  }, [bikes, boundsKey, map, isBikeSelected]);
+    // Kör bara när boundsKey ändras så zoom inte nollställs av live-uppdateringar.
+  }, [boundsKey, map, isBikeSelected]);
 
   return null;
 }
@@ -144,7 +146,7 @@ function BikeSideList({ bikes, selectedId, onSelect }) {
   );
 }
 
-export default function MapView() {
+export default function MapView({ simulationRunning, refreshKey }) {
   const [bikes, setBikes] = useState([]);
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -152,6 +154,7 @@ export default function MapView() {
   const markerRefs = useRef({});
   const [isBikeSelected, setIsBikeSelected] = useState(false);
   const [pauseFitBounds, setPauseFitBounds] = useState(false);
+  const bikeUpdates = useContext(BikeUpdatesContext);
 
   // Filters
   const [onlyAvailable, setOnlyAvailable] = useState(false);
@@ -193,6 +196,71 @@ export default function MapView() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    const updates = bikeUpdates || {};
+    if (!Object.keys(updates).length) return;
+
+    // Uppdatera position/batteri live när vi får socket-events
+    setBikes((prev) =>
+      prev.map((bike) => {
+        const update = updates[bike.id];
+        if (!update) return bike;
+        return {
+          ...bike,
+          location: update.location ?? bike.location,
+          battery: update.battery ?? bike.battery,
+          isAvailable: update.isAvailable ?? bike.isAvailable,
+          cityId: update.cityId ?? bike.cityId,
+          updatedAt: update.updatedAt ?? bike.updatedAt,
+        };
+      })
+    );
+  }, [bikeUpdates]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    // Uppdatera cykel-listan när vi explicit triggar en refresh
+    (async () => {
+      try {
+        const bikeRes = await getAllBikes();
+        if (!cancelled) setBikes(bikeRes || []);
+      } catch (err) {
+        if (!cancelled) console.error(err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
+
+  useEffect(() => {
+    if (!simulationRunning) return;
+
+    let cancelled = false;
+
+    const pollBikes = async () => {
+      try {
+        const bikeRes = await getAllBikes();
+        if (!cancelled) setBikes(bikeRes || []);
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err);
+        }
+      }
+    };
+
+    // Hämta cyklar löpande när simuleringen är igång
+    const intervalId = setInterval(pollBikes, 5000);
+    pollBikes();
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [simulationRunning]);
 
   const defaultCenter = useMemo(() => {
     if (cities.length > 0 && cities[0].center?.lat && cities[0].center?.lng) {

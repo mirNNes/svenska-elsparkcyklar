@@ -5,6 +5,10 @@ import MapView from "./MapView";
 export default function Dashboard() {
   // Används för att tvinga kartan att mountas om efter en reset
   const [mapKey, setMapKey] = useState(0);
+  const [simulationRunning, setSimulationRunning] = useState(false);
+  const [simulationInfo, setSimulationInfo] = useState(null);
+  const [simulationBusy, setSimulationBusy] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   async function handleReset() {
     try {
@@ -18,6 +22,38 @@ export default function Dashboard() {
     }
   }
 
+  async function handleStartSimulation() {
+    try {
+      setSimulationBusy(true);
+      const res = await httpPost("/simulation/start", { count: 500 });
+      setSimulationRunning(true);
+      setSimulationInfo(res.data);
+      // Ladda om kartan så att nya simcyklar hämtas direkt
+      setMapKey((prev) => prev + 1);
+    } catch (err) {
+      console.error(err);
+      alert("Kunde inte starta simuleringen");
+    } finally {
+      setSimulationBusy(false);
+    }
+  }
+
+  async function handleStopSimulation() {
+    try {
+      setSimulationBusy(true);
+      await httpPost("/simulation/stop");
+      setSimulationRunning(false);
+      setSimulationInfo(null);
+      // Uppdatera kartans cykeldata efter stop
+      setRefreshKey((prev) => prev + 1);
+    } catch (err) {
+      console.error(err);
+      alert("Kunde inte stoppa simuleringen");
+    } finally {
+      setSimulationBusy(false);
+    }
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -25,12 +61,37 @@ export default function Dashboard() {
           <h1 style={{ margin: 0 }}>Dashboard</h1>
           <p style={{ margin: 0 }}>Karta över alla seedade cyklar</p>
         </div>
-        <button onClick={handleReset}>Återställ seed-data</button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            onClick={handleStartSimulation}
+            disabled={simulationBusy || simulationRunning}
+          >
+            Starta simulering (500/stad)
+          </button>
+          <button
+            onClick={handleStopSimulation}
+            disabled={simulationBusy || !simulationRunning}
+          >
+            Stoppa simulering
+          </button>
+          <button onClick={handleReset} disabled={simulationBusy}>
+            Återställ seed-data
+          </button>
+        </div>
       </header>
+
+      <p style={{ margin: 0 }}>
+        Simulation: {simulationRunning ? "igång" : "avstängd"}
+        {simulationInfo?.totalBikes ? ` (${simulationInfo.totalBikes} cyklar)` : ""}
+      </p>
 
       {/* Kartan får egen key så den mountas om vid reset */}
       <div style={{ minHeight: "70vh" }}>
-        <MapView key={mapKey} />
+        <MapView
+          key={mapKey}
+          simulationRunning={simulationRunning}
+          refreshKey={refreshKey}
+        />
       </div>
     </div>
   );

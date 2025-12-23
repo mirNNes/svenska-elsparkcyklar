@@ -7,8 +7,10 @@ const bikeRepository = require("../repositories/bikeRepository");
 
 const router = express.Router();
 
-const UPDATE_INTERVAL_MS = 2000;
+const UPDATE_INTERVAL_MS = 500;
 const DEFAULT_BIKES_PER_CITY = 500;
+const STEP_SIZE = 0.00005;
+const TURN_RATE = 0.35;
 
 const simulation = {
   running: false,
@@ -26,6 +28,7 @@ function normalizeBike(bike) {
     location: bike.location,
     battery: bike.battery,
     isAvailable: bike.isAvailable,
+    velocity: getInitialVelocity(),
   };
 }
 
@@ -34,12 +37,38 @@ function getCenterForCity(cityCenters, cityId) {
   return cityCenters[key] || { lat: 0, lng: 0 };
 }
 
-function getNextLocation(location, center) {
-  const baseLat = Number.isFinite(location?.lat) ? location.lat : center.lat || 0;
-  const baseLng = Number.isFinite(location?.lng) ? location.lng : center.lng || 0;
-  const deltaLat = (Math.random() - 0.5) * 0.002;
-  const deltaLng = (Math.random() - 0.5) * 0.002;
-  return { lat: baseLat + deltaLat, lng: baseLng + deltaLng };
+function getInitialVelocity() {
+  const angle = Math.random() * Math.PI * 2;
+  const speed = STEP_SIZE * (0.6 + Math.random() * 0.8);
+  return {
+    lat: Math.cos(angle) * speed,
+    lng: Math.sin(angle) * speed,
+  };
+}
+
+function getNextMovement(bike, center) {
+  const baseLat = Number.isFinite(bike.location?.lat) ? bike.location.lat : center.lat || 0;
+  const baseLng = Number.isFinite(bike.location?.lng) ? bike.location.lng : center.lng || 0;
+
+  const currentVelocity = bike.velocity || getInitialVelocity();
+  const speed = Math.sqrt(currentVelocity.lat ** 2 + currentVelocity.lng ** 2) || STEP_SIZE;
+
+  // Små svängar så att cykeln håller riktning en stund innan den byter.
+  const turn = (Math.random() - 0.5) * TURN_RATE;
+  const angle = Math.atan2(currentVelocity.lng, currentVelocity.lat) + turn;
+
+  const nextVelocity = {
+    lat: Math.cos(angle) * speed,
+    lng: Math.sin(angle) * speed,
+  };
+
+  return {
+    nextLocation: {
+      lat: baseLat + nextVelocity.lat,
+      lng: baseLng + nextVelocity.lng,
+    },
+    nextVelocity,
+  };
 }
 
 function stopSimulation() {
@@ -97,7 +126,8 @@ router.post("/start", requireAuth, requireRole("admin"), async (req, res) => {
     : DEFAULT_BIKES_PER_CITY;
 
   if (simulation.running) {
-    return res.status(409).json({ error: "Simulation körs redan" });
+    // Tillåt omstart genom att stoppa innan vi startar om.
+    stopSimulation();
   }
 
   const prep = await prepareSimulation(bikesPerCity);
@@ -118,7 +148,7 @@ router.post("/start", requireAuth, requireRole("admin"), async (req, res) => {
     try {
       const updatedBikes = simulation.bikes.map((bike) => {
         const center = getCenterForCity(simulation.cityCenters, bike.cityId);
-        const nextLocation = getNextLocation(bike.location, center);
+        const { nextLocation, nextVelocity } = getNextMovement(bike, center);
         const nextBattery = Math.max(
           0,
           (Number.isFinite(bike.battery) ? bike.battery : 100) - Math.random() * 1.5
@@ -128,6 +158,7 @@ router.post("/start", requireAuth, requireRole("admin"), async (req, res) => {
         return {
           ...bike,
           location: nextLocation,
+          velocity: nextVelocity,
           battery: nextBattery,
           updatedAt,
         };
@@ -163,13 +194,14 @@ router.post("/start", requireAuth, requireRole("admin"), async (req, res) => {
 });
 
 // POST /simulation/stop - stoppa simuleringen
-router.post("/stop", requireAuth, requireRole("admin"), (req, res) => {
-  if (!simulation.running) {
-    return res.status(400).json({ error: "Ingen simulation körs" });
-  }
-
+router.post("/stop", requireAuth, requireRole("admin"), async (req, res) => {
+  const wasRunning = simulation.running;
   stopSimulation();
-  return res.json({ message: "Simulation stoppad" });
+  const removed = await bikeRepository.deleteSimulationBikes();
+  return res.json({
+    message: wasRunning ? "Simulation stoppad" : "Ingen simulation kördes",
+    removedBikes: removed,
+  });
 });
 
 module.exports = router;

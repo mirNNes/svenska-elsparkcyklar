@@ -1,5 +1,6 @@
-import { httpGet } from "./http";
+import { api } from "./http";
 
-export function getAllCities() {
-  return httpGet("/city");
-}
+export const getAllCities = async () => {
+  const res = await api.get("/city");
+  return res.data;
+};

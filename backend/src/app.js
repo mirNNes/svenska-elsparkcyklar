@@ -11,6 +11,7 @@ const { Server } = require("socket.io");
 const { verifyAccessToken } = require("./utils/jwt");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -21,12 +22,14 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-// Tillåt frontend som körs på Vite (http://localhost:5173)
+// --- CORS ---
+// Tillåt både Docker-servade frontends (3002/3003) och Vite dev (5173).
 app.use(
   cors({
     origin: [
-      "http://localhost:3003", // admin frontend
-      "http://localhost:5173",
+      "http://localhost:3002", // kund-frontend (docker/nginx)
+      "http://localhost:3003", // admin-frontend (docker/nginx)
+      "http://localhost:5173", // Vite dev (lokalt)
     ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -34,7 +37,23 @@ app.use(
   })
 );
 
+// --- Rate limiting ---
+// Enkel skydd mot för hög belastning (per IP).
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minut
+  max: 300, // 300 requests per minut per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Lägg limit på både gamla och nya API-vägen
+app.use("/api", apiLimiter);
+app.use("/api/v1", apiLimiter);
+
+// --- API routes ---
+// Bakåtkompatibelt /api + officiell /api/v1 (krav på versionering)
 app.use("/api", apiRouter);
+app.use("/api/v1", apiRouter);
 
 // Swagger UI för att överblicka API:t
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -60,7 +79,11 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3003", "http://localhost:5173"],
+    origin: [
+      "http://localhost:3002",
+      "http://localhost:3003",
+      "http://localhost:5173",
+    ],
     credentials: true,
   },
 });

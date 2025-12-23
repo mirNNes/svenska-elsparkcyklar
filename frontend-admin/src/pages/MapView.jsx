@@ -18,12 +18,7 @@ import {
 } from "../api/zones";
 import { BikeUpdatesContext } from "../components/Layout";
 import L from "leaflet";
-
-const bikeIcon = new L.Icon({
-  iconUrl: "/scooter.png",
-  iconSize: [52, 52],
-  iconAnchor: [16, 32],
-});
+import { useSearchParams } from "react-router-dom";
 
 const LOW_BATTERY_THRESHOLD = 30;
 
@@ -190,15 +185,40 @@ export default function MapView({ simulationRunning, refreshKey }) {
   const [pauseFitBounds, setPauseFitBounds] = useState(false);
   const bikeUpdates = useContext(BikeUpdatesContext);
 
-  // Filters
-  const [onlyAvailable, setOnlyAvailable] = useState(false);
-  const [onlyLowBattery, setOnlyLowBattery] = useState(false);
+  const bikeIcon = useMemo(
+    () =>
+      new L.Icon({
+        iconUrl: "/scooter.png",
+        iconSize: [52, 52],
+        iconAnchor: [16, 32],
+      }),
+    []
+  );
 
   // Selected bike from list
   const [selectedBikeId, setSelectedBikeId] = useState(null);
 
   // Key that triggers FitBounds (data/filters change)
   const boundsKeyRef = useRef(0);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const cityId = searchParams.get("city");
+  const availableOnly = searchParams.get("available") === "1";
+  const lowBatteryOnly = searchParams.get("lowBattery") === "1";
+
+  // Uppdaterar filter via Url-query params
+  function updateQueryParam(key, enabled) {
+    const params = new URLSearchParams(searchParams);
+
+    if (enabled) {
+      params.set(key, "1");
+    } else {
+      params.delete(key);
+    }
+
+    setSearchParams(params);
+  }
 
   useEffect(() => {
     if (!selectedBikeId) {
@@ -309,7 +329,7 @@ export default function MapView({ simulationRunning, refreshKey }) {
     };
 
     // Hämta cyklar löpande när simuleringen är igång
-    const intervalId = setInterval(pollBikes, 5000);
+    const intervalId = setInterval(pollBikes, 8000);
     pollBikes();
 
     return () => {
@@ -325,24 +345,29 @@ export default function MapView({ simulationRunning, refreshKey }) {
     return [62.0, 15.0];
   }, [cities]);
 
-  const stats = useMemo(() => {
-    const total = bikes.length;
-    const available = bikes.filter((b) => !!b.isAvailable).length;
-    const rented = total - available;
-    const lowBattery = bikes.filter(
-      (b) => (b.battery ?? 0) < LOW_BATTERY_THRESHOLD
-    ).length;
-    return { total, available, rented, lowBattery };
-  }, [bikes]);
-
   const filteredBikes = useMemo(() => {
     return bikes.filter((b) => {
-      if (onlyAvailable && !b.isAvailable) return false;
-      if (onlyLowBattery && (b.battery ?? 0) >= LOW_BATTERY_THRESHOLD)
+      if (cityId && String(b.cityId) !== String(cityId)) return false;
+      if (availableOnly && !b.isAvailable) return false;
+      if (
+        lowBatteryOnly &&
+        (b.battery ?? 0) >= LOW_BATTERY_THRESHOLD
+      )
         return false;
       return true;
     });
-  }, [bikes, onlyAvailable, onlyLowBattery]);
+  }, [bikes, cityId, availableOnly, lowBatteryOnly]);
+
+  const stats = useMemo(() => {
+    const total = filteredBikes.length;
+    const available = filteredBikes.filter((b) => !!b.isAvailable).length;
+    const rented = total - available;
+    const lowBattery = filteredBikes.filter(
+      (b) => (b.battery ?? 0) < LOW_BATTERY_THRESHOLD
+    ).length;
+
+    return { total, available, rented, lowBattery };
+  }, [filteredBikes]);
 
   // bump boundsKey when filters/data changes
   const boundsKey = useMemo(() => {
@@ -350,7 +375,7 @@ export default function MapView({ simulationRunning, refreshKey }) {
 
     boundsKeyRef.current += 1;
     return boundsKeyRef.current;
-  }, [filteredBikes.length, onlyAvailable, onlyLowBattery, pauseFitBounds]);
+  }, [filteredBikes.length, pauseFitBounds]);
 
   const selectedBike = useMemo(() => {
     return filteredBikes.find((b) => b._id === selectedBikeId) || null;
@@ -385,7 +410,15 @@ export default function MapView({ simulationRunning, refreshKey }) {
 
   return (
     <div style={{ height: "80vh", width: "100%" }}>
-      <h1>Karta</h1>
+      <h1>
+        Karta
+        {cityId && (
+          <span style={{ opacity: 0.6, fontSize: "1.6rem" }}>
+            {" "}
+            – filtrerad
+          </span>
+        )}
+      </h1>
 
       {/* Controls + stats */}
       <div
@@ -398,27 +431,29 @@ export default function MapView({ simulationRunning, refreshKey }) {
         }}
       >
         <label style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
-          <input
-            type="checkbox"
-            checked={onlyAvailable}
-            onChange={(e) => {
-              setOnlyAvailable(e.target.checked);
-              setSelectedBikeId(null);
-              setIsBikeSelected(false);
-            }}
-          />
+        <input
+          type="checkbox"
+          checked={availableOnly}
+          onChange={(e) => {
+            updateQueryParam("available", e.target.checked);
+            setSelectedBikeId(null);
+            setIsBikeSelected(false);
+          }}
+          style={{ transform: "scale(1.4)" }}
+        />
           Visa bara lediga
         </label>
 
         <label style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
           <input
             type="checkbox"
-            checked={onlyLowBattery}
+            checked={lowBatteryOnly}
             onChange={(e) => {
-              setOnlyLowBattery(e.target.checked);
+              updateQueryParam("lowBattery", e.target.checked);
               setSelectedBikeId(null);
               setIsBikeSelected(false);
             }}
+            style={{ transform: "scale(1.4)" }}
           />
           Visa bara låg batteri (&lt; {LOW_BATTERY_THRESHOLD}%)
         </label>
@@ -543,7 +578,7 @@ export default function MapView({ simulationRunning, refreshKey }) {
 
             <FitBounds
               bikes={filteredBikes}
-              boundsKey={boundsKey}
+              boundsKey={simulationRunning ? null : boundsKey}
               isBikeSelected={isBikeSelected}
             />
             <FlyToBike

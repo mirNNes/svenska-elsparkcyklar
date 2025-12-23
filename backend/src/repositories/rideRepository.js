@@ -3,6 +3,65 @@
 const Ride = require("../models/Ride");
 const Bike = require("../models/Bike");
 const User = require("../models/User");
+const stationRepository = require("./stationRepository");
+const parkingZoneRepository = require("./parkingZoneRepository");
+
+const BASE_PRICE = 10;
+const PRICE_PER_MINUTE = 2;
+const FREE_PARKING_FEE = 10;
+const STATION_RADIUS_METERS = 50;
+
+// Enkel avståndsberäkning i meter (räcker för små ytor i en stad).
+function distanceMeters(a, b) {
+  const lat1 = Number(a?.lat);
+  const lng1 = Number(a?.lng);
+  const lat2 = Number(b?.lat);
+  const lng2 = Number(b?.lng);
+  if (!Number.isFinite(lat1) || !Number.isFinite(lng1) || !Number.isFinite(lat2) || !Number.isFinite(lng2)) {
+    return null;
+  }
+
+  const dLat = (lat2 - lat1) * 111000;
+  const dLng = (lng2 - lng1) * 111000 * Math.cos((lat1 * Math.PI) / 180);
+  return Math.sqrt(dLat * dLat + dLng * dLng);
+}
+
+function isInsideRadius(point, center, radiusMeters) {
+  const dist = distanceMeters(point, center);
+  if (!Number.isFinite(radiusMeters) || dist === null) return false;
+  return dist <= radiusMeters;
+}
+
+async function getParkingInfo(bike) {
+  if (!bike || !bike.location) {
+    return { type: "free", fee: FREE_PARKING_FEE };
+  }
+
+  const cityId = bike.cityId;
+  const stations = cityId
+    ? await stationRepository.getStationsByCity(cityId)
+    : await stationRepository.getAllStations();
+
+  const parkingZones = cityId
+    ? await parkingZoneRepository.getParkingZonesByCity(cityId)
+    : await parkingZoneRepository.getAllParkingZones();
+
+  const stationHit = stations.find((station) =>
+    isInsideRadius(bike.location, station.location, STATION_RADIUS_METERS)
+  );
+  if (stationHit) {
+    return { type: "station", fee: 0 };
+  }
+
+  const parkingHit = parkingZones.find((zone) =>
+    isInsideRadius(bike.location, zone.center, zone.radius)
+  );
+  if (parkingHit) {
+    return { type: "parking", fee: 0 };
+  }
+
+  return { type: "free", fee: FREE_PARKING_FEE };
+}
 
 async function getRideById(id) {
   return await Ride.findOne({ id });
@@ -69,10 +128,13 @@ async function endRide(rideId) {
   // Energi: enkelt antagande 0.6 Wh per 100 meter
   ride.energyUsed = Math.round(ride.distance * 0.6);
 
-  // Pris: 10 kr start + 2 kr per minut
-  const base = 10;
-  const perMinute = 2;
-  ride.price = Math.round((base + perMinute * durationMinutes) * 100) / 100;
+  // Pris: 10 kr start + 2 kr per minut + ev. fri-parkering
+  const bike = await Bike.findById(ride.bikeId);
+  const parking = await getParkingInfo(bike);
+  ride.parkingType = parking.type;
+  ride.parkingFee = parking.fee;
+  ride.price =
+    Math.round((BASE_PRICE + PRICE_PER_MINUTE * durationMinutes + parking.fee) * 100) / 100;
 
   await ride.save();
   return { ride };

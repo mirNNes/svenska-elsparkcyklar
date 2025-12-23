@@ -31,6 +31,55 @@ const swaggerSpec = {
           radius: { type: "number" },
         },
       },
+      Station: {
+        type: "object",
+        properties: {
+          id: { type: "number" },
+          name: { type: "string" },
+          cityId: { type: "string", description: "Mongo ObjectId" },
+          location: {
+            type: "object",
+            properties: {
+              lat: { type: "number" },
+              lng: { type: "number" },
+            },
+          },
+          capacity: { type: "number" },
+          currentBikes: { type: "number" },
+        },
+      },
+      ParkingZone: {
+        type: "object",
+        properties: {
+          id: { type: "number" },
+          name: { type: "string" },
+          cityId: { type: "string", description: "Mongo ObjectId" },
+          center: {
+            type: "object",
+            properties: {
+              lat: { type: "number" },
+              lng: { type: "number" },
+            },
+          },
+          radius: { type: "number" },
+        },
+      },
+      AllowedZone: {
+        type: "object",
+        properties: {
+          id: { type: "number" },
+          name: { type: "string" },
+          cityId: { type: "string", description: "Mongo ObjectId" },
+          center: {
+            type: "object",
+            properties: {
+              lat: { type: "number" },
+              lng: { type: "number" },
+            },
+          },
+          radius: { type: "number" },
+        },
+      },
       Bike: {
         type: "object",
         properties: {
@@ -68,6 +117,8 @@ const swaggerSpec = {
           distance: { type: "number" },
           energyUsed: { type: "number" },
           price: { type: "number" },
+          parkingType: { type: "string" },
+          parkingFee: { type: "number" },
         },
       },
       AuthTokens: {
@@ -201,6 +252,41 @@ const swaggerSpec = {
         },
       },
     },
+    "/bike/{id}/telemetry": {
+      patch: {
+        summary: "Uppdatera cykel-telemetri (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  location: {
+                    type: "object",
+                    properties: {
+                      lat: { type: "number" },
+                      lng: { type: "number" },
+                    },
+                  },
+                  battery: { type: "number" },
+                  isAvailable: { type: "boolean" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Uppdaterad" },
+          400: { description: "Fel indata" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Hittades inte" },
+        },
+      },
+    },
     "/city": {
       get: {
         summary: "Lista alla städer",
@@ -219,6 +305,201 @@ const swaggerSpec = {
         responses: {
           201: { description: "Skapad" },
           401: { description: "Unauthorized" },
+        },
+      },
+    },
+    "/station": {
+      get: {
+        summary: "Lista alla laddstationer",
+        responses: { 200: { description: "OK" } },
+      },
+      post: {
+        summary: "Skapa laddstation (admin)",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/Station" },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Skapad" },
+          400: { description: "Fel indata" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+        },
+      },
+    },
+    "/station/{id}": {
+      get: {
+        summary: "Hämta laddstation",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          200: { description: "OK" },
+          404: { description: "Hittades inte" },
+        },
+      },
+      patch: {
+        summary: "Uppdatera laddstation (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/Station" },
+            },
+          },
+        },
+        responses: {
+          200: { description: "OK" },
+          400: { description: "Fel indata" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Hittades inte" },
+        },
+      },
+      delete: {
+        summary: "Ta bort laddstation (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          204: { description: "Borttagen" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Hittades inte" },
+        },
+      },
+    },
+    "/parking-zone": {
+      get: {
+        summary: "Lista alla parkeringszoner",
+        responses: { 200: { description: "OK" } },
+      },
+      post: {
+        summary: "Skapa parkeringszon (admin)",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ParkingZone" },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Skapad" },
+          400: { description: "Fel indata" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+        },
+      },
+    },
+    "/parking-zone/{id}": {
+      get: {
+        summary: "Hämta parkeringszon",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          200: { description: "OK" },
+          404: { description: "Hittades inte" },
+        },
+      },
+      patch: {
+        summary: "Uppdatera parkeringszon (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ParkingZone" },
+            },
+          },
+        },
+        responses: {
+          200: { description: "OK" },
+          400: { description: "Fel indata" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Hittades inte" },
+        },
+      },
+      delete: {
+        summary: "Ta bort parkeringszon (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          204: { description: "Borttagen" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Hittades inte" },
+        },
+      },
+    },
+    "/allowed-zone": {
+      get: {
+        summary: "Lista alla tillåtna zoner",
+        responses: { 200: { description: "OK" } },
+      },
+      post: {
+        summary: "Skapa tillåten zon (admin)",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/AllowedZone" },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Skapad" },
+          400: { description: "Fel indata" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+        },
+      },
+    },
+    "/allowed-zone/{id}": {
+      get: {
+        summary: "Hämta tillåten zon",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          200: { description: "OK" },
+          404: { description: "Hittades inte" },
+        },
+      },
+      patch: {
+        summary: "Uppdatera tillåten zon (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/AllowedZone" },
+            },
+          },
+        },
+        responses: {
+          200: { description: "OK" },
+          400: { description: "Fel indata" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Hittades inte" },
+        },
+      },
+      delete: {
+        summary: "Ta bort tillåten zon (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          204: { description: "Borttagen" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Hittades inte" },
         },
       },
     },

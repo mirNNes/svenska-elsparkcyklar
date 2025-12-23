@@ -1,8 +1,21 @@
 import { useContext, useEffect, useMemo, useState, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMap,
+  Circle,
+  CircleMarker,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { getAllBikes, rentBike, returnBike } from "../api/bikes";
 import { getAllCities } from "../api/cities";
+import {
+  getAllAllowedZones,
+  getAllParkingZones,
+  getAllStations,
+} from "../api/zones";
 import { BikeUpdatesContext } from "../components/Layout";
 import L from "leaflet";
 
@@ -27,7 +40,9 @@ function FitBounds({ bikes, boundsKey, isBikeSelected }) {
 
     const points = bikes
       .map((b) => [b.location?.lat, b.location?.lng])
-      .filter(([lat, lng]) => typeof lat === "number" && typeof lng === "number");
+      .filter(
+        ([lat, lng]) => typeof lat === "number" && typeof lng === "number"
+      );
 
     if (points.length === 0) return;
 
@@ -93,9 +108,18 @@ function BikeSideList({ bikes, selectedId, onSelect }) {
         background: "white",
       }}
     >
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          marginBottom: 10,
+        }}
+      >
         <strong>Cyklar</strong>
-        <span style={{ marginLeft: "auto", opacity: 0.7 }}>{list.length} st</span>
+        <span style={{ marginLeft: "auto", opacity: 0.7 }}>
+          {list.length} st
+        </span>
       </div>
 
       <input
@@ -129,7 +153,14 @@ function BikeSideList({ bikes, selectedId, onSelect }) {
                 cursor: "pointer",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, color: "black" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  color: "black",
+                }}
+              >
                 <strong>Bike #{b.id}</strong>
                 <span style={{ opacity: 0.8 }}>{battery}%</span>
               </div>
@@ -149,6 +180,9 @@ function BikeSideList({ bikes, selectedId, onSelect }) {
 export default function MapView({ simulationRunning, refreshKey }) {
   const [bikes, setBikes] = useState([]);
   const [cities, setCities] = useState([]);
+  const [stations, setStations] = useState([]);
+  const [parkingZones, setParkingZones] = useState([]);
+  const [allowedZones, setAllowedZones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const markerRefs = useRef({});
@@ -177,10 +211,20 @@ export default function MapView({ simulationRunning, refreshKey }) {
 
     (async () => {
       try {
-        const [bikeRes, cityRes] = await Promise.all([getAllBikes(), getAllCities()]);
+        const [bikeRes, cityRes, stationRes, parkingRes, allowedRes] =
+          await Promise.all([
+            getAllBikes(),
+            getAllCities(),
+            getAllStations(),
+            getAllParkingZones(),
+            getAllAllowedZones(),
+          ]);
         if (!cancelled) {
           setBikes(bikeRes || []);
-          setCities(cityRes || []);
+          setCities(cityRes?.data || cityRes || []);
+          setStations(stationRes || []);
+          setParkingZones(parkingRes || []);
+          setAllowedZones(allowedRes || []);
         }
       } catch (err) {
         if (!cancelled) {
@@ -224,8 +268,20 @@ export default function MapView({ simulationRunning, refreshKey }) {
     // Uppdatera cykel-listan när vi explicit triggar en refresh
     (async () => {
       try {
-        const bikeRes = await getAllBikes();
-        if (!cancelled) setBikes(bikeRes || []);
+        const [bikeRes, stationRes, parkingRes, allowedRes] = await Promise.all(
+          [
+            getAllBikes(),
+            getAllStations(),
+            getAllParkingZones(),
+            getAllAllowedZones(),
+          ]
+        );
+        if (!cancelled) {
+          setBikes(bikeRes || []);
+          setStations(stationRes || []);
+          setParkingZones(parkingRes || []);
+          setAllowedZones(allowedRes || []);
+        }
       } catch (err) {
         if (!cancelled) console.error(err);
       }
@@ -273,14 +329,17 @@ export default function MapView({ simulationRunning, refreshKey }) {
     const total = bikes.length;
     const available = bikes.filter((b) => !!b.isAvailable).length;
     const rented = total - available;
-    const lowBattery = bikes.filter((b) => (b.battery ?? 0) < LOW_BATTERY_THRESHOLD).length;
+    const lowBattery = bikes.filter(
+      (b) => (b.battery ?? 0) < LOW_BATTERY_THRESHOLD
+    ).length;
     return { total, available, rented, lowBattery };
   }, [bikes]);
 
   const filteredBikes = useMemo(() => {
     return bikes.filter((b) => {
       if (onlyAvailable && !b.isAvailable) return false;
-      if (onlyLowBattery && (b.battery ?? 0) >= LOW_BATTERY_THRESHOLD) return false;
+      if (onlyLowBattery && (b.battery ?? 0) >= LOW_BATTERY_THRESHOLD)
+        return false;
       return true;
     });
   }, [bikes, onlyAvailable, onlyLowBattery]);
@@ -288,7 +347,7 @@ export default function MapView({ simulationRunning, refreshKey }) {
   // bump boundsKey when filters/data changes
   const boundsKey = useMemo(() => {
     if (pauseFitBounds) return boundsKeyRef.current;
-    
+
     boundsKeyRef.current += 1;
     return boundsKeyRef.current;
   }, [filteredBikes.length, onlyAvailable, onlyLowBattery, pauseFitBounds]);
@@ -364,7 +423,14 @@ export default function MapView({ simulationRunning, refreshKey }) {
           Visa bara låg batteri (&lt; {LOW_BATTERY_THRESHOLD}%)
         </label>
 
-        <div style={{ marginLeft: "auto", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+        <div
+          style={{
+            marginLeft: "auto",
+            display: "flex",
+            gap: "1rem",
+            flexWrap: "wrap",
+          }}
+        >
           <span>
             <strong>Totalt:</strong> {stats.total}
           </span>
@@ -392,13 +458,94 @@ export default function MapView({ simulationRunning, refreshKey }) {
         />
 
         <div style={{ flex: 1 }}>
-          <MapContainer center={defaultCenter} zoom={5} style={{ height: "70vh", width: "100%" }}>
+          <MapContainer
+            center={defaultCenter}
+            zoom={5}
+            style={{ height: "70vh", width: "100%" }}
+          >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
             />
 
-            <FitBounds bikes={filteredBikes} boundsKey={boundsKey} isBikeSelected={isBikeSelected} />
+            {/* Tillåtna zoner (blå) */}
+            {allowedZones.map((zone) => {
+              const lat = zone.center?.lat;
+              const lng = zone.center?.lng;
+              if (typeof lat !== "number" || typeof lng !== "number")
+                return null;
+              return (
+                <Circle
+                  key={`allowed-${zone._id}`}
+                  center={[lat, lng]}
+                  radius={zone.radius || 0}
+                  pathOptions={{
+                    color: "#1976d2",
+                    fillColor: "#1976d2",
+                    fillOpacity: 0.08,
+                    weight: 1,
+                  }}
+                />
+              );
+            })}
+
+            {/* Parkeringszoner (grön) */}
+            {parkingZones.map((zone) => {
+              const lat = zone.center?.lat;
+              const lng = zone.center?.lng;
+              if (typeof lat !== "number" || typeof lng !== "number")
+                return null;
+              return (
+                <Circle
+                  key={`parking-${zone._id}`}
+                  center={[lat, lng]}
+                  radius={zone.radius || 0}
+                  pathOptions={{
+                    color: "#2e7d32",
+                    fillColor: "#2e7d32",
+                    fillOpacity: 0.12,
+                    weight: 1,
+                  }}
+                />
+              );
+            })}
+
+            {/* Laddstationer (orange) */}
+            {stations.map((station) => {
+              const lat = station.location?.lat;
+              const lng = station.location?.lng;
+              if (typeof lat !== "number" || typeof lng !== "number")
+                return null;
+              return (
+                <CircleMarker
+                  key={`station-${station._id}`}
+                  center={[lat, lng]}
+                  radius={6}
+                  pathOptions={{
+                    color: "#ef6c00",
+                    fillColor: "#ef6c00",
+                    fillOpacity: 0.9,
+                    weight: 1,
+                  }}
+                >
+                  <Popup>
+                    <div>
+                      <strong>{station.name}</strong>
+                      <br />
+                      Kapacitet: {station.capacity}
+                      <br />
+                      Cyklar: {station.currentBikes}
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              );
+            })}
+
+            <FitBounds
+              bikes={filteredBikes}
+              boundsKey={boundsKey}
+              isBikeSelected={isBikeSelected}
+            />
             <FlyToBike
               bike={selectedBike}
               setPauseFitBounds={setPauseFitBounds}
@@ -408,17 +555,18 @@ export default function MapView({ simulationRunning, refreshKey }) {
             {filteredBikes.map((bike) => {
               const lat = bike.location?.lat;
               const lng = bike.location?.lng;
-              if (typeof lat !== "number" || typeof lng !== "number") return null;
+              if (typeof lat !== "number" || typeof lng !== "number")
+                return null;
 
               const battery = bike.battery ?? 0;
 
               return (
-                <Marker 
-                  key={bike._id} 
-                  position={[lat, lng]} 
+                <Marker
+                  key={bike._id}
+                  position={[lat, lng]}
                   icon={bikeIcon}
-                  ref={(ref) => { 
-                    if (ref) markerRefs.current[bike._id] = ref; 
+                  ref={(ref) => {
+                    if (ref) markerRefs.current[bike._id] = ref;
                   }}
                 >
                   <Popup>
@@ -430,9 +578,13 @@ export default function MapView({ simulationRunning, refreshKey }) {
                       Batteri: {battery}%
                       <br />
                       {bike.isAvailable ? (
-                        <button onClick={() => handleRent(bike._id)}>Hyr</button>
+                        <button onClick={() => handleRent(bike._id)}>
+                          Hyr
+                        </button>
                       ) : (
-                        <button onClick={() => handleReturn(bike._id)}>Återlämna</button>
+                        <button onClick={() => handleReturn(bike._id)}>
+                          Återlämna
+                        </button>
                       )}
                     </div>
                   </Popup>
@@ -442,7 +594,8 @@ export default function MapView({ simulationRunning, refreshKey }) {
           </MapContainer>
 
           <p style={{ marginTop: "0.5rem", color: "#555" }}>
-            Tips: Om flera cyklar står på samma plats kan ikoner ligga på varandra — zooma in för att se dem tydligare.
+            Tips: Om flera cyklar står på samma plats kan ikoner ligga på
+            varandra — zooma in för att se dem tydligare.
           </p>
         </div>
       </div>

@@ -7,6 +7,9 @@ const rideRouter = require('./ride');
 const authRouter = require('./auth');
 const simulationRouter = require('./simulation');
 const adminRouter = require('./admin');
+const stationRouter = require('./station');
+const parkingZoneRouter = require('./parkingZone');
+const allowedZoneRouter = require('./allowedZone');
 
 const router = express.Router();
 
@@ -22,5 +25,8 @@ router.use('/ride', rideRouter);
 router.use('/auth', authRouter);
 router.use('/simulation', simulationRouter);
 router.use('/admin', adminRouter);
+router.use('/station', stationRouter);
+router.use('/parking-zone', parkingZoneRouter);
+router.use('/allowed-zone', allowedZoneRouter);
 
 module.exports = router;

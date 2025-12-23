@@ -5,6 +5,10 @@ async function getAllStations() {
   return await Station.find();
 }
 
+async function getStationsByCity(cityId) {
+  return await Station.find({ cityId });
+}
+
 async function getStationById(id) {
   return await Station.findOne({ id });
 }
@@ -47,6 +51,7 @@ async function deleteStation(id) {
 
 module.exports = {
   getAllStations,
+  getStationsByCity,
   getStationById,
   createStation,
   updateStation,

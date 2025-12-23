@@ -11,6 +11,9 @@ const rideSchema = new mongoose.Schema({
   distance: { type: Number, default: null }, // meter
   energyUsed: { type: Number, default: null }, // Wh
   price: { type: Number, default: null }, // SEK
+  // Parkeringsinfo vid avslut
+  parkingType: { type: String, default: null },
+  parkingFee: { type: Number, default: null },
 });
 
 module.exports = mongoose.model("Ride", rideSchema);

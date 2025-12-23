@@ -5,6 +5,10 @@ async function getAllParkingZones() {
   return await ParkingZone.find();
 }
 
+async function getParkingZonesByCity(cityId) {
+  return await ParkingZone.find({ cityId });
+}
+
 async function getParkingZoneById(id) {
   return await ParkingZone.findOne({ id });
 }
@@ -45,6 +49,7 @@ async function deleteParkingZone(id) {
 
 module.exports = {
   getAllParkingZones,
+  getParkingZonesByCity,
   getParkingZoneById,
   createParkingZone,
   updateParkingZone,

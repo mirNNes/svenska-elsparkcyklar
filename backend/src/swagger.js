@@ -552,6 +552,7 @@ const swaggerSpec = {
     "/ride/start": {
       post: {
         summary: "Starta en resa (kräver auth)",
+        security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
           content: {
@@ -573,6 +574,42 @@ const swaggerSpec = {
         },
       },
     },
+    "/ride/me": {
+      get: {
+        summary: "Hämta resor för inloggad användare",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: "OK" },
+          401: { description: "Unauthorized" },
+          404: { description: "User not found" },
+        },
+      },
+    },
+    "/ride/active": {
+      get: {
+        summary: "Hämta aktiv resa för inloggad användare",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: "OK" },
+          401: { description: "Unauthorized" },
+          404: { description: "User not found" },
+        },
+      },
+    },
+    "/ride/active/bike/{bikeId}": {
+      get: {
+        summary: "Hämta aktiv resa för cykel (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "bikeId", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          200: { description: "OK" },
+          400: { description: "Fel indata" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Hittades inte" },
+        },
+      },
+    },
     "/ride/{id}": {
       get: {
         summary: "Hämta resa",
@@ -586,6 +623,7 @@ const swaggerSpec = {
     "/ride/end": {
       post: {
         summary: "Stoppa resa (kräver auth)",
+        security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
           content: {

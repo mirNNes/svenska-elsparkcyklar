@@ -65,8 +65,49 @@ async function getRideById(req, res) {
   res.json(ride);
 }
 
+// GET /ride/me - hämta resor för inloggad användare
+async function getMyRides(req, res) {
+  const userObjectId = req.user?.id;
+  if (!userObjectId) return res.status(401).json({ error: "Unauthorized" });
+
+  const user = await userRepository.getUserByObjectId(userObjectId);
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  const rides = await rideRepository.getRidesByUserObjectId(user._id);
+  res.json(rides);
+}
+
+// GET /ride/active - hämta aktiv resa för inloggad användare
+async function getMyActiveRide(req, res) {
+  const userObjectId = req.user?.id;
+  if (!userObjectId) return res.status(401).json({ error: "Unauthorized" });
+
+  const user = await userRepository.getUserByObjectId(userObjectId);
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  const ride = await rideRepository.getActiveRideByUserObjectId(user._id);
+  res.json({ ride: ride || null });
+}
+
+// GET /ride/active/bike/:bikeId - hämta aktiv resa för cykel (admin)
+async function getActiveRideByBike(req, res) {
+  const bikeId = Number.parseInt(req.params.bikeId, 10);
+  if (!Number.isInteger(bikeId)) {
+    return res.status(400).json({ error: "Ogiltigt bikeId" });
+  }
+
+  const bike = await bikeRepository.getBikeById(bikeId);
+  if (!bike) return res.status(404).json({ error: "Bike not found" });
+
+  const ride = await rideRepository.getActiveRideByBikeObjectId(bike._id);
+  res.json({ ride: ride || null });
+}
+
 module.exports = {
   startRide,
   endRide,
   getRideById,
+  getMyRides,
+  getMyActiveRide,
+  getActiveRideByBike,
 };

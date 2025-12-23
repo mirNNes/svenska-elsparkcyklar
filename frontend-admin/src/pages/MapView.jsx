@@ -16,6 +16,7 @@ import {
   getAllParkingZones,
   getAllStations,
 } from "../api/zones";
+import { getActiveRideForBike } from "../api/rides";
 import { BikeUpdatesContext } from "../components/Layout";
 import L from "leaflet";
 import { useSearchParams } from "react-router-dom";
@@ -39,6 +40,24 @@ function getBikeModeLabel(bike) {
   if (bike.isOperational === false) return "Avstängd";
   if (bike.isInService === true) return "Service";
   return "OK";
+}
+
+function isBatteryEmpty(bike) {
+  const battery = Number(bike?.battery);
+  if (!Number.isFinite(battery)) return false;
+  return battery <= 0;
+}
+
+function getAvailabilityText(bike) {
+  if (isBatteryEmpty(bike)) return "Batteri slut";
+  return bike.isAvailable ? "Tillgänglig" : "Upptagen";
+}
+
+function getRideStatusText(bike, activeRide) {
+  if (isBatteryEmpty(bike)) return "Batteri slut";
+  if (activeRide) return `Pågår (Ride #${activeRide.id})`;
+  if (bike.isAvailable) return "Ingen aktiv resa";
+  return "Pågår (hämtas...)";
 }
 
 /**
@@ -71,9 +90,16 @@ function FitBounds({ bikes, boundsKey, isBikeSelected }) {
 /** Zooma till vald cykel (körs vid klick i listan). */
 function FlyToBike({ bike, setPauseFitBounds, markerRefs }) {
   const map = useMap();
+  const lastBikeId = useRef(null);
 
   useEffect(() => {
-    if (!bike) return;
+    if (!bike) {
+      lastBikeId.current = null;
+      return;
+    }
+
+    if (lastBikeId.current === bike._id) return;
+    lastBikeId.current = bike._id;
 
     const lat = bike.location?.lat;
     const lng = bike.location?.lng;
@@ -85,18 +111,13 @@ function FlyToBike({ bike, setPauseFitBounds, markerRefs }) {
       animate: true,
       duration: 0.6,
     });
-
-    map.once("moveend", () => {
-      const marker = markerRefs.current[bike._id];
-      marker?.openPopup();
-    });
-  }, [bike, map, setPauseFitBounds, markerRefs]);
+  }, [bike, map, setPauseFitBounds]);
 
   return null;
 }
 
 /** Sidolista (sök + klick för att välja cykel). */
-function BikeSideList({ bikes, selectedId, onSelect }) {
+function BikeSideList({ bikes, selectedId, onSelect, activeRides }) {
   const [query, setQuery] = useState("");
 
   const list = useMemo(() => {
@@ -155,6 +176,10 @@ function BikeSideList({ bikes, selectedId, onSelect }) {
           const battery = b.battery ?? 0;
           const speedText = formatSpeed(b.speed);
           const modeText = getBikeModeLabel(b);
+          const activeRide = activeRides[String(b.id)];
+          const availabilityText = getAvailabilityText(b);
+          const rideText = getRideStatusText(b, activeRide);
+          const showLowBattery = !isBatteryEmpty(b) && battery < LOW_BATTERY_THRESHOLD;
 
           return (
             <button
@@ -182,11 +207,14 @@ function BikeSideList({ bikes, selectedId, onSelect }) {
               </div>
 
               <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
-                {b.isAvailable ? "Tillgänglig" : "Upptagen"}
-                {battery < LOW_BATTERY_THRESHOLD ? " • Låg batteri" : ""}
+                {availabilityText}
+                {showLowBattery ? " • Låg batteri" : ""}
               </div>
               <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
                 Hastighet: {speedText} • Läge: {modeText}
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+                Resa: {rideText}
               </div>
             </button>
           );
@@ -202,6 +230,7 @@ export default function MapView({ simulationRunning, refreshKey }) {
   const [stations, setStations] = useState([]);
   const [parkingZones, setParkingZones] = useState([]);
   const [allowedZones, setAllowedZones] = useState([]);
+  const [activeRides, setActiveRides] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const markerRefs = useRef({});
@@ -308,6 +337,20 @@ export default function MapView({ simulationRunning, refreshKey }) {
         };
       })
     );
+
+    setActiveRides((prev) => {
+      let changed = false;
+      const next = { ...prev };
+
+      Object.entries(updates).forEach(([key, update]) => {
+        if (update?.isAvailable === true && next[key]) {
+          next[key] = null;
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
+    });
   }, [bikeUpdates]);
 
   useEffect(() => {
@@ -385,13 +428,17 @@ export default function MapView({ simulationRunning, refreshKey }) {
 
   const stats = useMemo(() => {
     const total = filteredBikes.length;
+    const outOfBattery = filteredBikes.filter((b) => isBatteryEmpty(b)).length;
     const available = filteredBikes.filter((b) => !!b.isAvailable).length;
-    const rented = total - available;
-    const lowBattery = filteredBikes.filter(
-      (b) => (b.battery ?? 0) < LOW_BATTERY_THRESHOLD
+    const rented = filteredBikes.filter(
+      (b) => !b.isAvailable && !isBatteryEmpty(b)
     ).length;
+    const lowBattery = filteredBikes.filter((b) => {
+      const battery = b.battery ?? 0;
+      return battery > 0 && battery < LOW_BATTERY_THRESHOLD;
+    }).length;
 
-    return { total, available, rented, lowBattery };
+    return { total, available, rented, lowBattery, outOfBattery };
   }, [filteredBikes]);
 
   // bump boundsKey when filters/data changes
@@ -405,6 +452,36 @@ export default function MapView({ simulationRunning, refreshKey }) {
   const selectedBike = useMemo(() => {
     return filteredBikes.find((b) => b._id === selectedBikeId) || null;
   }, [filteredBikes, selectedBikeId]);
+
+  const selectedBikeKey = selectedBike ? String(selectedBike.id) : null;
+  const selectedActiveRide = selectedBikeKey ? activeRides[selectedBikeKey] : null;
+
+  useEffect(() => {
+    if (!selectedBikeKey) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const data = await getActiveRideForBike(selectedBike.id);
+        if (!cancelled) {
+          setActiveRides((prev) => ({
+            ...prev,
+            [selectedBikeKey]: data?.ride || null,
+          }));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err);
+          setActiveRides((prev) => ({ ...prev, [selectedBikeKey]: null }));
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBikeKey, selectedBike]);
 
   const handleRent = async (bikeId) => {
     try {
@@ -500,6 +577,9 @@ export default function MapView({ simulationRunning, refreshKey }) {
           <span>
             <strong>Låg batteri:</strong> {stats.lowBattery}
           </span>
+          <span>
+            <strong>Batteri slut:</strong> {stats.outOfBattery}
+          </span>
         </div>
       </div>
 
@@ -512,14 +592,16 @@ export default function MapView({ simulationRunning, refreshKey }) {
             setSelectedBikeId(bikeId);
             setIsBikeSelected(true);
           }}
+          activeRides={activeRides}
         />
 
         <div style={{ flex: 1 }}>
-          <MapContainer
-            center={defaultCenter}
-            zoom={5}
-            style={{ height: "70vh", width: "100%" }}
-          >
+          <div style={{ position: "relative", height: "70vh" }}>
+            <MapContainer
+              center={defaultCenter}
+              zoom={5}
+              style={{ height: "100%", width: "100%" }}
+            >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
@@ -615,11 +697,6 @@ export default function MapView({ simulationRunning, refreshKey }) {
               if (typeof lat !== "number" || typeof lng !== "number")
                 return null;
 
-              const battery = bike.battery ?? 0;
-              const speedText = formatSpeed(bike.speed);
-              const modeText = getBikeModeLabel(bike);
-              const telemetryTime = formatTelemetryTime(bike.lastTelemetryAt);
-
               return (
                 <Marker
                   key={bike._id}
@@ -628,36 +705,84 @@ export default function MapView({ simulationRunning, refreshKey }) {
                   ref={(ref) => {
                     if (ref) markerRefs.current[bike._id] = ref;
                   }}
-                >
-                  <Popup>
-                    <div>
-                      <strong>Bike #{bike.id}</strong>
-                      <br />
-                      Status: {bike.isAvailable ? "Tillgänglig" : "Upptagen"}
-                      <br />
-                      Batteri: {battery}%
-                      <br />
-                      Hastighet: {speedText}
-                      <br />
-                      Läge: {modeText}
-                      <br />
-                      Senast telemetri: {telemetryTime}
-                      <br />
-                      {bike.isAvailable ? (
-                        <button onClick={() => handleRent(bike._id)}>
-                          Hyr
-                        </button>
-                      ) : (
-                        <button onClick={() => handleReturn(bike._id)}>
-                          Återlämna
-                        </button>
-                      )}
-                    </div>
-                  </Popup>
-                </Marker>
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedBikeId(bike._id);
+                      setIsBikeSelected(true);
+                    },
+                  }}
+                />
               );
             })}
           </MapContainer>
+
+          {selectedBike ? (
+            <div
+              style={{
+                position: "absolute",
+                top: 16,
+                right: 16,
+                zIndex: 1000,
+                background: "white",
+                padding: 12,
+                borderRadius: 10,
+                boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+                width: 260,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 8,
+                }}
+              >
+                <strong>Bike #{selectedBike.id}</strong>
+                <button
+                  onClick={() => {
+                    setSelectedBikeId(null);
+                    setIsBikeSelected(false);
+                  }}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    fontSize: 16,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div style={{ fontSize: 13 }}>
+                <div>Status: {getAvailabilityText(selectedBike)}</div>
+                <div>Batteri: {selectedBike.battery ?? 0}%</div>
+                <div>Hastighet: {formatSpeed(selectedBike.speed)}</div>
+                <div>Läge: {getBikeModeLabel(selectedBike)}</div>
+                <div>Senast telemetri: {formatTelemetryTime(selectedBike.lastTelemetryAt)}</div>
+                <div>Resa: {getRideStatusText(selectedBike, selectedActiveRide)}</div>
+                {selectedActiveRide?.startedAt ? (
+                  <div>Start: {formatTelemetryTime(selectedActiveRide.startedAt)}</div>
+                ) : null}
+              </div>
+
+              {!isBatteryEmpty(selectedBike) ? (
+                <div style={{ marginTop: 10 }}>
+                  {selectedBike.isAvailable ? (
+                    <button onClick={() => handleRent(selectedBike._id)}>
+                      Hyr
+                    </button>
+                  ) : (
+                    <button onClick={() => handleReturn(selectedBike._id)}>
+                      Återlämna
+                    </button>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          </div>
 
           <p style={{ marginTop: "0.5rem", color: "#555" }}>
             Tips: Om flera cyklar står på samma plats kan ikoner ligga på

@@ -1,5 +1,6 @@
 const express = require("express");
 const requireAuth = require("../middleware/requireAuth");
+const { requireRole } = require("../middleware/requireAuth");
 const rideController = require("../controllers/rideController");
 
 const router = express.Router();
@@ -9,6 +10,20 @@ router.post("/start", requireAuth, rideController.startRide);
 
 // POST /ride/end
 router.post("/end", requireAuth, rideController.endRide);
+
+// GET /ride/me - resor för inloggad användare
+router.get("/me", requireAuth, rideController.getMyRides);
+
+// GET /ride/active - aktiv resa för inloggad användare
+router.get("/active", requireAuth, rideController.getMyActiveRide);
+
+// GET /ride/active/bike/:bikeId - aktiv resa för cykel (admin)
+router.get(
+  "/active/bike/:bikeId",
+  requireAuth,
+  requireRole("admin"),
+  rideController.getActiveRideByBike
+);
 
 // GET /ride/:id
 router.get("/:id", rideController.getRideById);

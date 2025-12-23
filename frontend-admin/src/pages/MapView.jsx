@@ -22,6 +22,25 @@ import { useSearchParams } from "react-router-dom";
 
 const LOW_BATTERY_THRESHOLD = 30;
 
+// visa telemetri i UI
+function formatSpeed(speed) {
+  if (!Number.isFinite(speed)) return "n/a";
+  return `${Math.round(speed)} m/s`;
+}
+
+function formatTelemetryTime(value) {
+  if (!value) return "n/a";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "n/a";
+  return date.toLocaleString("sv-SE");
+}
+
+function getBikeModeLabel(bike) {
+  if (bike.isOperational === false) return "Avstängd";
+  if (bike.isInService === true) return "Service";
+  return "OK";
+}
+
 /**
  * Zooma kartan så att alla (filtrerade) cyklar syns.
  * Körs när "boundsKey" ändras (dvs när filter eller data ändras),
@@ -134,6 +153,8 @@ function BikeSideList({ bikes, selectedId, onSelect }) {
         {list.map((b) => {
           const isSelected = selectedId === b._id;
           const battery = b.battery ?? 0;
+          const speedText = formatSpeed(b.speed);
+          const modeText = getBikeModeLabel(b);
 
           return (
             <button
@@ -163,6 +184,9 @@ function BikeSideList({ bikes, selectedId, onSelect }) {
               <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
                 {b.isAvailable ? "Tillgänglig" : "Upptagen"}
                 {battery < LOW_BATTERY_THRESHOLD ? " • Låg batteri" : ""}
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+                Hastighet: {speedText} • Läge: {modeText}
               </div>
             </button>
           );
@@ -276,6 +300,10 @@ export default function MapView({ simulationRunning, refreshKey }) {
           battery: update.battery ?? bike.battery,
           isAvailable: update.isAvailable ?? bike.isAvailable,
           cityId: update.cityId ?? bike.cityId,
+          speed: update.speed ?? bike.speed,
+          isOperational: update.isOperational ?? bike.isOperational,
+          isInService: update.isInService ?? bike.isInService,
+          lastTelemetryAt: update.lastTelemetryAt ?? bike.lastTelemetryAt,
           updatedAt: update.updatedAt ?? bike.updatedAt,
         };
       })
@@ -349,10 +377,7 @@ export default function MapView({ simulationRunning, refreshKey }) {
     return bikes.filter((b) => {
       if (cityId && String(b.cityId) !== String(cityId)) return false;
       if (availableOnly && !b.isAvailable) return false;
-      if (
-        lowBatteryOnly &&
-        (b.battery ?? 0) >= LOW_BATTERY_THRESHOLD
-      )
+      if (lowBatteryOnly && (b.battery ?? 0) >= LOW_BATTERY_THRESHOLD)
         return false;
       return true;
     });
@@ -413,10 +438,7 @@ export default function MapView({ simulationRunning, refreshKey }) {
       <h1>
         Karta
         {cityId && (
-          <span style={{ opacity: 0.6, fontSize: "1.6rem" }}>
-            {" "}
-            – filtrerad
-          </span>
+          <span style={{ opacity: 0.6, fontSize: "1.6rem" }}> – filtrerad</span>
         )}
       </h1>
 
@@ -431,16 +453,16 @@ export default function MapView({ simulationRunning, refreshKey }) {
         }}
       >
         <label style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
-        <input
-          type="checkbox"
-          checked={availableOnly}
-          onChange={(e) => {
-            updateQueryParam("available", e.target.checked);
-            setSelectedBikeId(null);
-            setIsBikeSelected(false);
-          }}
-          style={{ transform: "scale(1.4)" }}
-        />
+          <input
+            type="checkbox"
+            checked={availableOnly}
+            onChange={(e) => {
+              updateQueryParam("available", e.target.checked);
+              setSelectedBikeId(null);
+              setIsBikeSelected(false);
+            }}
+            style={{ transform: "scale(1.4)" }}
+          />
           Visa bara lediga
         </label>
 
@@ -594,6 +616,9 @@ export default function MapView({ simulationRunning, refreshKey }) {
                 return null;
 
               const battery = bike.battery ?? 0;
+              const speedText = formatSpeed(bike.speed);
+              const modeText = getBikeModeLabel(bike);
+              const telemetryTime = formatTelemetryTime(bike.lastTelemetryAt);
 
               return (
                 <Marker
@@ -611,6 +636,12 @@ export default function MapView({ simulationRunning, refreshKey }) {
                       Status: {bike.isAvailable ? "Tillgänglig" : "Upptagen"}
                       <br />
                       Batteri: {battery}%
+                      <br />
+                      Hastighet: {speedText}
+                      <br />
+                      Läge: {modeText}
+                      <br />
+                      Senast telemetri: {telemetryTime}
                       <br />
                       {bike.isAvailable ? (
                         <button onClick={() => handleRent(bike._id)}>

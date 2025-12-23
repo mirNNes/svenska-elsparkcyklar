@@ -12,6 +12,11 @@ const bikeSchema = new mongoose.Schema({
     lat: { type: Number, default: 0 },
     lng: { type: Number, default: 0 },
   },
+  // "Cykelprogrammet"
+  speed: { type: Number, default: 0 },
+  isOperational: { type: Boolean, default: true },
+  isInService: { type: Boolean, default: false },
+  lastTelemetryAt: { type: Date, default: null },
 });
 
 module.exports = mongoose.model("Bike", bikeSchema);

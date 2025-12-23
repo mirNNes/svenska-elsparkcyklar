@@ -86,6 +86,10 @@ const swaggerSpec = {
           id: { type: "number" },
           battery: { type: "number" },
           isAvailable: { type: "boolean" },
+          speed: { type: "number" },
+          isOperational: { type: "boolean" },
+          isInService: { type: "boolean" },
+          lastTelemetryAt: { type: "string", format: "date-time", nullable: true },
           cityId: { type: "string", description: "Mongo ObjectId" },
           location: {
             type: "object",
@@ -286,6 +290,9 @@ const swaggerSpec = {
                   },
                   battery: { type: "number" },
                   isAvailable: { type: "boolean" },
+                  speed: { type: "number" },
+                  isOperational: { type: "boolean" },
+                  isInService: { type: "boolean" },
                 },
               },
             },
@@ -294,6 +301,32 @@ const swaggerSpec = {
         responses: {
           200: { description: "Uppdaterad" },
           400: { description: "Fel indata" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Hittades inte" },
+        },
+      },
+    },
+    "/bike/{id}/disable": {
+      post: {
+        summary: "Stäng av cykel (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          200: { description: "Uppdaterad" },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Hittades inte" },
+        },
+      },
+    },
+    "/bike/{id}/enable": {
+      post: {
+        summary: "Slå på cykel (admin)",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "number" } }],
+        responses: {
+          200: { description: "Uppdaterad" },
           401: { description: "Unauthorized" },
           403: { description: "Forbidden" },
           404: { description: "Hittades inte" },

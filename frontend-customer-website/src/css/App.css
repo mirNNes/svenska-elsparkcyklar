@@ -1,0 +1,146 @@
+#root {
+  /* min-width: 60%; */
+  width: 80%;
+  margin: 0 auto;
+  /* text-align: center; */
+}
+
+/* Header */
+
+.logo {
+  height: 7em;
+  padding: 1.5em;
+  float: left;
+}
+
+.headertitle {
+  float: left;
+  width: 70%;
+  margin-top: 0.5em;
+}
+
+/* Nav */
+
+.nav {
+  padding-bottom: 5px;
+  border-bottom: #181616 solid 1px;
+}
+
+/* Footer */
+
+.footer {
+  color: #181616;
+  border-top: #181616 solid 1px;
+  width: 100%;
+}
+
+.main {
+  flex: 1;
+}
+
+
+/* Loggin page */
+
+.welcome_text {
+  width: 45%;
+  padding: 10px;
+}
+
+.login_form {
+  height: 380px;
+  width: 400px;
+  background-color: rgba(211, 198, 198, 0.432);
+  position: absolute;
+  transform: translate(-50%,-50%);
+  top: 55%;
+  left: 70%;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(155, 139, 139, 0.233);
+  box-shadow: 0 0 20px rgba(8,7,16,0.6);
+  padding: 30px 35px;
+}
+
+.login_form *, .create_account_form *{
+  font-family: 'Poppins',sans-serif;
+  color: #262323;
+  letter-spacing: 0.5px;
+  outline: none;
+  border: none;
+}
+
+.login_form h3, .create_account_form h3{
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 42px;
+  text-align: center;
+  margin-top: 0em;
+  margin-bottom: 0em;
+}
+
+.login_form label, .create_account_form label{
+  display: block;
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: left;
+  padding-left: 0.5em;
+}
+
+.login_input{
+  display: block;
+  padding-right: 10px;
+  height: 50px;
+  width: 100%;
+  background-color: rgba(222, 216, 216, 0.541);
+  border-radius: 3px;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 300;
+}
+
+::placeholder{
+  color: #e5e5e5;
+}
+
+.login_btn, .new_account_btn, .create_account_btn {
+  margin-top: 50px;
+  width: 100%;
+  background-color: #23171086;
+  color: #dcdbe3;
+  padding: 15px 0;
+  font-size: 18px;
+  font-weight: 600;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.new_account_btn{
+  display: block;
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* .new_account_btn a {
+  color: #dcdbe3;
+} */
+
+/* Create Account page */
+
+.create_account_form {
+  height: 380px;
+  border-radius: 10px;
+  padding: 30px 35px;
+}
+
+.create_account_input {
+  padding-right: 10px;
+  display: block;
+  height: 50px;
+  width: 100%;
+  background-color: rgba(222, 216, 216, 0.541);
+  border-radius: 3px;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 300;
+}

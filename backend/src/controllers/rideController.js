@@ -103,6 +103,16 @@ async function getActiveRideByBike(req, res) {
   res.json({ ride: ride || null });
 }
 
+// GET /ride - hämta alla resor (admin)
+async function getAllRides(req, res) {
+  try {
+    const rides = await rideRepository.getAllRides();
+    res.json(rides);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch rides" });
+  }
+}
+
 module.exports = {
   startRide,
   endRide,
@@ -110,4 +120,5 @@ module.exports = {
   getMyRides,
   getMyActiveRide,
   getActiveRideByBike,
+  getAllRides,
 };

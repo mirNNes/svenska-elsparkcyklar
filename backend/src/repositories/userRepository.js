@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt");
 const User = require("../models/User");
 
 async function getAllUsers() {
-  return await User.find();
+  return await User.find({ role: "user" });
 }
 
 async function getUserById(id) {

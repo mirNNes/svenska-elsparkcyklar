@@ -91,6 +91,10 @@ async function getActiveRideByBikeObjectId(bikeObjectId) {
   return await Ride.findOne({ bikeId: bikeObjectId, endedAt: null });
 }
 
+async function getAllRides() {
+  return await Ride.find().sort({ startedAt: -1 });
+}
+
 async function startRide(bikeId, userId) {
   // Hämta bike och user via deras numeriska id och använd deras _id som referens
   const bike = await Bike.findOne({ id: bikeId });
@@ -178,4 +182,5 @@ module.exports = {
   getActiveRideByBikeObjectId,
   startRide,
   endRide,
+  getAllRides,
 };

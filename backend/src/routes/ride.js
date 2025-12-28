@@ -25,6 +25,14 @@ router.get(
   rideController.getActiveRideByBike
 );
 
+// GET /
+router.get(
+  "/",
+  requireAuth,
+  requireRole("admin"),
+  rideController.getAllRides
+);
+
 // GET /ride/:id
 router.get("/:id", rideController.getRideById);
 

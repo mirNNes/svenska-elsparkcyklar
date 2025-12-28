@@ -8,6 +8,9 @@ let globalAccessToken = null;
 
 let globalRefreshToken = null;
 
+globalAccessToken = localStorage.getItem("adminToken");
+globalRefreshToken = localStorage.getItem("adminRefreshToken");
+
 // Anropas från App.jsx när man loggar in / ut
 export function setAccessToken(token) {
   globalAccessToken = token;

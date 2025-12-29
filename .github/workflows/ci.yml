@@ -48,7 +48,10 @@ jobs:
         env:
           NODE_ENV: test
           MONGO_URI: mongodb://localhost:27017/elsparkcyklar_test
+          JWT_ACCESS_SECRET: test_access_secret_ci
+          JWT_REFRESH_SECRET: test_refresh_secret_ci
         run: npm test
+
 
   frontend:
     name: Frontend - lint & build

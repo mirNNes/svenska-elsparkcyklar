@@ -42,7 +42,7 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Lint
-        run: npm run lint --if-present || true
+        run: npm run lint --if-present
 
       - name: Test
         env:
@@ -97,7 +97,7 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Lint
-        run: npm run lint --if-present || true
+        run: npm run lint --if-present
 
       - name: Build
         run: npm run build

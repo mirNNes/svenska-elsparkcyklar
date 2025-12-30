@@ -561,9 +561,12 @@ const swaggerSpec = {
                 type: "object",
                 properties: {
                   bikeId: { type: "number" },
-                  userId: { type: "number" },
+                  userId: {
+                    type: "number",
+                    description: "Endast admin, ignoreras för inloggad användare",
+                  },
                 },
-                required: ["bikeId", "userId"],
+                required: ["bikeId"],
               },
             },
           },
@@ -647,7 +650,13 @@ const swaggerSpec = {
         summary: "Starta uthyrning av cykel (kräver auth)",
         parameters: [
           { name: "bikeId", in: "path", required: true, schema: { type: "number" } },
-          { name: "userId", in: "path", required: true, schema: { type: "number" } },
+          {
+            name: "userId",
+            in: "path",
+            required: true,
+            schema: { type: "number" },
+            description: "Endast admin, ignoreras för inloggad användare",
+          },
         ],
         responses: {
           201: { description: "Uthyrning startad" },

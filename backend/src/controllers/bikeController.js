@@ -39,14 +39,23 @@ async function deleteBike(req, res) {
 
 async function startRent(req, res) {
   const bikeId = Number.parseInt(req.params.bikeId, 10);
-  const userId = Number.parseInt(req.params.userId, 10);
+  const isAdmin = req.user?.role === "admin";
+  let userId = isAdmin ? Number.parseInt(req.params.userId, 10) : null;
 
   if (!Number.isInteger(bikeId) || bikeId <= 0)
     return res.status(400).json({ error: "Ogiltigt bikeId" });
   const bike = await bikeRepository.getBikeById(bikeId);
-  const user = await userRepository.getUserById(userId);
-  if (!Number.isInteger(userId) || userId <= 0)
-    return res.status(400).json({ error: "Ogiltigt userId" });
+  let user;
+  if (isAdmin) {
+    if (!Number.isInteger(userId) || userId <= 0)
+      return res.status(400).json({ error: "Ogiltigt userId" });
+    user = await userRepository.getUserById(userId);
+  } else {
+    const userObjectId = req.user?.id;
+    if (!userObjectId) return res.status(401).json({ error: "Unauthorized" });
+    user = await userRepository.getUserByObjectId(userObjectId);
+    if (user) userId = user.id;
+  }
   if (!user) return res.status(404).json({ error: "User not found" });
   if (!bike) return res.status(404).json({ error: "Bike not found" });
   if (bike.isOperational === false)

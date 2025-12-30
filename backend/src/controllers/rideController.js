@@ -4,16 +4,25 @@ const userRepository = require("../repositories/userRepository");
 
 // POST /ride/start - starta en resa
 async function startRide(req, res) {
-  const { bikeId, userId } = req.body;
+  const { bikeId, userId: bodyUserId } = req.body || {};
+  const isAdmin = req.user?.role === "admin";
+  let userId = isAdmin ? bodyUserId : null;
 
   if (!Number.isInteger(bikeId) || bikeId <= 0) {
     return res.status(400).json({ error: "Ogiltigt bikeId" });
   }
   const bike = await bikeRepository.getBikeById(bikeId);
-  const user = await userRepository.getUserById(userId);
-
-  if (!Number.isInteger(userId) || userId <= 0) {
-    return res.status(400).json({ error: "Ogiltigt userId" });
+  let user;
+  if (isAdmin) {
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({ error: "Ogiltigt userId" });
+    }
+    user = await userRepository.getUserById(userId);
+  } else {
+    const userObjectId = req.user?.id;
+    if (!userObjectId) return res.status(401).json({ error: "Unauthorized" });
+    user = await userRepository.getUserByObjectId(userObjectId);
+    if (user) userId = user.id;
   }
 
   if (!user) return res.status(404).json({ error: "User not found" });

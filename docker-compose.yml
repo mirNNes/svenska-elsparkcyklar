@@ -14,8 +14,8 @@ services:
     depends_on:
       - mongo
 
-  frontend:
-    build: ./frontend
+  frontend-customer-website:
+    build: ./frontend-customer-website
     ports:
       - "3002:80"
     depends_on:
@@ -25,6 +25,13 @@ services:
     build: ./frontend-admin
     ports:
       - "3003:80"
+    depends_on:
+      - backend
+
+  frontend-customer-app:
+    build: ./frontend-customer-app
+    ports:
+      - "3004:80"
     depends_on:
       - backend
 

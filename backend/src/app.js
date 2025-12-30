@@ -27,8 +27,9 @@ app.get("/health", (req, res) => {
 app.use(
   cors({
     origin: [
-      "http://localhost:3002", // kund-frontend (docker/nginx)
+      "http://localhost:3002", // kund-frontend-website (docker/nginx)
       "http://localhost:3003", // admin-frontend (docker/nginx)
+      "http://localhost:3004", // kund-frontend-app (docker/nginx)
       "http://localhost:5173", // Vite dev (lokalt)
     ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -82,6 +83,7 @@ const io = new Server(server, {
     origin: [
       "http://localhost:3002",
       "http://localhost:3003",
+      "http://localhost:3004",
       "http://localhost:5173",
     ],
     credentials: true,

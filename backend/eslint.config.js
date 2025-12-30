@@ -24,6 +24,13 @@ module.exports = [
         setTimeout: "readonly",
         setInterval: "readonly",
         clearInterval: "readonly",
+        // Web API globals som finns i Node 18+ (t.ex. i auth.js)
+        URL: "readonly",
+        URLSearchParams: "readonly",
+        fetch: "readonly",
+        Headers: "readonly",
+        Request: "readonly",
+        Response: "readonly",
       },
     },
     rules: {

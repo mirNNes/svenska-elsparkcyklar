@@ -18,15 +18,3 @@ Använd Docker Compose för att starta alla tjänster samtidigt:
 
 ```bash
 docker-compose up --build
-```
-
-## Admin OAuth (GitHub)
-
-För admin-inloggning via GitHub OAuth används backendens `/api/auth/github`.
-Sätt `ADMIN_REDIRECT_URL` till admin-frontendens adress:
-
-```
-ADMIN_REDIRECT_URL=http://localhost:3003
-# Vite dev (om du kör admin lokalt utan Docker):
-# ADMIN_REDIRECT_URL=http://localhost:5173
-```

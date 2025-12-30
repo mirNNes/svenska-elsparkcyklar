@@ -116,6 +116,41 @@ span {
   transform: scale(0.98);
 }
 
+.login-divider {
+  margin: 1.2rem 0 0.6rem;
+  position: relative;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.login-divider::before {
+  left: 0;
+}
+
+.login-divider::after {
+  right: 0;
+}
+
+.login-button--github {
+  margin-top: 0.6rem;
+  background: #24292f;
+}
+
+.login-button--github:hover {
+  background: #2b3137;
+}
+
 .login-error {
   margin-top: 0.75rem;
   font-size: 0.8rem;

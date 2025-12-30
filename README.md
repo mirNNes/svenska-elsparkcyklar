@@ -6,11 +6,11 @@ Detta projekt består av tre delar: backend, frontend och en simulator för elsp
 
 ## Struktur
 
-* `backend/` – Express.js API som hanterar data och logik.
-* `frontend/` – Webbgränssnitt för att visa elsparkcyklar.
-* `frontend-admin/` – Admin-gränssnitt för att hantera cyklar, städer, användare och resor.
-* `simulator/` – Genererar testdata för backend.
-* `docs/` – Dokumentation och referenser.
+- `backend/` – Express.js API som hanterar data och logik.
+- `frontend/` – Webbgränssnitt för att visa elsparkcyklar.
+- `frontend-admin/` – Admin-gränssnitt för att hantera cyklar, städer, användare och resor.
+- `simulator/` – Genererar testdata för backend.
+- `docs/` – Dokumentation och referenser.
 
 ## Kör projektet
 
@@ -22,11 +22,11 @@ docker-compose up --build
 
 ## Admin OAuth (GitHub)
 
-För admin-inloggning via GitHub OAuth används backendens `/api/auth/github`.
-Sätt `ADMIN_REDIRECT_URL` till admin-frontendens adress:
+Admin-inloggning via GitHub startas från backendens `/api/auth/github`.
 
-```
-ADMIN_REDIRECT_URL=http://localhost:3003
-# Vite dev (om du kör admin lokalt utan Docker):
-# ADMIN_REDIRECT_URL=http://localhost:5173
-```
+**Starta OAuth:**
+
+- Docker: `http://localhost:3001/api/auth/github`
+- Utan Docker (backend lokalt): `http://localhost:5000/api/auth/github`
+
+**Redirect efter login (admin‑UI):**

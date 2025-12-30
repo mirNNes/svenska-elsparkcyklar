@@ -19,14 +19,3 @@ Använd Docker Compose för att starta alla tjänster samtidigt:
 ```bash
 docker-compose up --build
 ```
-
-## Admin OAuth (GitHub)
-
-Admin-inloggning via GitHub startas från backendens `/api/auth/github`.
-
-**Starta OAuth:**
-
-- Docker: `http://localhost:3001/api/auth/github`
-- Utan Docker (backend lokalt): `http://localhost:5000/api/auth/github`
-
-**Redirect efter login (admin‑UI):**

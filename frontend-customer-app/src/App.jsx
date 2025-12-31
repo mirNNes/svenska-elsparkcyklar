@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useEffectEvent } from "react";
 // import { useState, useEffect } from "react";
 import './css/App.css'
-import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Rides from "./pages/Rides";
 import Login from "./pages/Login";
 import CreateAccount from "./pages/create_account"
@@ -51,6 +51,10 @@ export default function App() {
     setUser(JSON.parse(storedUser));
   });
 
+  const updateAuthLoading = useEffectEvent(() => {
+    setAuthLoading(false);
+  });
+
   useEffect(() => {
     const storedToken = localStorage.getItem("userToken");
     const storedRefresh = localStorage.getItem("userRefreshToken");
@@ -68,7 +72,7 @@ export default function App() {
       updateUser(storedUser);
     }
 
-    setAuthLoading(false);
+    updateAuthLoading();
   }, []);
 
   // Anropas från Login.jsx efter lyckad login

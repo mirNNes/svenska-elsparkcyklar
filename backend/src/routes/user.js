@@ -7,6 +7,7 @@ const router = express.Router();
 
 // CRUD-routes – kräver admin
 router.get("/", requireAuth, requireRole("admin"), userController.getAllUsers);
+router.get("/me", requireAuth, userController.getMe);
 router.get("/:id", requireAuth, requireRole("admin"), userController.getUserById);
 router.post("/", requireAuth, requireRole("admin"), userController.createUser);
 router.put("/:id", requireAuth, requireRole("admin"), userController.updateUser);

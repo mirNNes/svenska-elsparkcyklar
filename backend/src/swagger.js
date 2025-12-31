@@ -103,12 +103,20 @@ const swaggerSpec = {
       User: {
         type: "object",
         properties: {
+          _id: { type: "string", description: "Mongo ObjectId" },
           id: { type: "number" },
           username: { type: "string" },
           name: { type: "string" },
           email: { type: "string" },
           role: { type: "string", enum: ["user", "admin"] },
           balance: { type: "number" },
+          stats: {
+            type: "object",
+            properties: {
+              distance: { type: "number" },
+              rides: { type: "number" },
+            },
+          },
         },
       },
       Ride: {
@@ -746,6 +754,17 @@ const swaggerSpec = {
           400: { description: "Fel indata" },
           401: { description: "Unauthorized" },
           403: { description: "Forbidden" },
+        },
+      },
+    },
+    "/user/me": {
+      get: {
+        summary: "Hämta profil för inloggad användare",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: "OK", content: { "application/json": { schema: { $ref: "#/components/schemas/User" } } } },
+          401: { description: "Unauthorized" },
+          404: { description: "User not found" },
         },
       },
     },

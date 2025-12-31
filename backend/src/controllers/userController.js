@@ -6,6 +6,30 @@ async function getAllUsers(req, res) {
   res.json(users);
 }
 
+// GET /user/me - hämta profil för inloggad användare
+async function getMe(req, res) {
+  // JWT-baserad identitet är den enda källa vi litar på för "nuvarande användare".
+  const userObjectId = req.user?.id;
+  if (!userObjectId) return res.status(401).json({ error: "Unauthorized" });
+
+  const user = await userRepository.getUserByObjectId(userObjectId);
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  // Skicka tillbaka en säker, användbar vy utan lösenordshash.
+  const safeUser = {
+    _id: user._id,
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    username: user.username,
+    role: user.role,
+    balance: user.balance,
+    stats: user.stats,
+  };
+
+  res.json(safeUser);
+}
+
 // GET /user/:id - hämta en användare
 async function getUserById(req, res) {
   const id = Number.parseInt(req.params.id, 10);
@@ -92,6 +116,7 @@ async function topUpBalance(req, res) {
 
 module.exports = {
   getAllUsers,
+  getMe,
   getUserById,
   createUser,
   updateUser,

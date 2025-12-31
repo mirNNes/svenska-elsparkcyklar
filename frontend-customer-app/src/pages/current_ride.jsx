@@ -56,7 +56,7 @@ export default function CurrentRide() {
   }
 
   if (activeLoading) return <div>Laddar aktiv resa...</div>;
-  if (activeError) return <div style={{ color: "red" }}>{error}</div>;
+  if (activeError) return <div style={{ color: "red" }}>{activeError}</div>;
 
   return (
     <div className="margin-div">

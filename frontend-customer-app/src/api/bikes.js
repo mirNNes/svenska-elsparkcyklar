@@ -44,7 +44,7 @@ export const getActiveRide = async () => {
   return response.data;
 }
 
-export const getRide = async () => {
+export const getRide = async (rideID) => {
   const response = await axios.get(`/ride/${rideID}`);
   return response.data;
 }

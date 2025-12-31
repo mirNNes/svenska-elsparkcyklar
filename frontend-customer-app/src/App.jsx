@@ -38,22 +38,34 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
 
+  const updateToken = useEffectEvent((storedToken) => {
+    setToken(storedToken);
+    setAccessToken(storedToken);
+  });
+
+  const updateRefreshToken = useEffectEvent((storedRefresh) => {
+    setRefreshToken(storedRefresh);
+  });
+
+  const updateUser = useEffectEvent((storedUser) => {
+    setUser(JSON.parse(storedUser));
+  });
+
   useEffect(() => {
     const storedToken = localStorage.getItem("userToken");
     const storedRefresh = localStorage.getItem("userRefreshToken");
     const storedUser = localStorage.getItem("userUser");
 
     if (storedToken) {
-      setToken(storedToken);
-      setAccessToken(storedToken);
+      updateToken(storedToken);
     }
 
     if (storedRefresh) {
-      setRefreshToken(storedRefresh);
+      updateRefreshToken(storedRefresh);
     }
 
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      updateUser(storedUser);
     }
 
     setAuthLoading(false);

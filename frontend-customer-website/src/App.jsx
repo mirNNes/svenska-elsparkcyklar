@@ -36,13 +36,13 @@ function PrivateRoute({ token, loading, children }) {
 
 export default function App() {
   const [token, setToken] = useState(null);
-  const [user, setUser] = useState(null);
+  // const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     const storedToken = localStorage.getItem("userToken");
     const storedRefresh = localStorage.getItem("userRefreshToken");
-    const storedUser = localStorage.getItem("userUser");
+    // const storedUser = localStorage.getItem("userUser");
 
     if (storedToken) {
       setToken(storedToken);
@@ -53,9 +53,9 @@ export default function App() {
       setRefreshToken(storedRefresh);
     }
 
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    // if (storedUser) {
+    //   setUser(JSON.parse(storedUser));
+    // }
 
     setAuthLoading(false);
   }, []);
@@ -64,10 +64,10 @@ export default function App() {
   function handleLogin(accessToken, refreshToken, user) {
     localStorage.setItem("userToken", accessToken);
     localStorage.setItem("userRefreshToken", refreshToken);
-    localStorage.setItem("userUser", JSON.stringify(user));
+    // localStorage.setItem("userUser", JSON.stringify(user));
 
     setToken(accessToken);
-    setUser(user);
+    // setUser(user);
 
     setAccessToken(accessToken);
     setRefreshToken(refreshToken);
@@ -80,7 +80,7 @@ export default function App() {
     localStorage.removeItem("userUser");
 
     setToken(null);
-    setUser(null);
+    // setUser(null);
 
     setAccessToken(null);
     setRefreshToken(null);

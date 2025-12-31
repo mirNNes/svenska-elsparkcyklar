@@ -1,9 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { io } from 'socket.io-client';
 import logo from '../assets/logo.png'
-
-export const BikeUpdatesContext = React.createContext({});
 
 export default function Layout({ children, onLogout, accessToken, user }) {
   const location = useLocation();

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { httpPost } from "../api/http";
-import logo from '../assets/logo.png'
 
 export default function CreateAccount({ onLogin }) {
   const [name, setName] = useState("");

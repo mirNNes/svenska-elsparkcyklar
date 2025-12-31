@@ -13,7 +13,7 @@ export default function Rides() {
     (async () => {
       try {
         const res = await getAllRides();
-        if (!cancelled) setRides(res.data || []);
+        if (!cancelled) setRides(res || []);
       } catch (err) {
         if (!cancelled) {
           console.error(err);

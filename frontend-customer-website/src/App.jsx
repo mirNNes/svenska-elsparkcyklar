@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 // import { useState, useEffect } from "react";
 import './css/App.css'
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -88,7 +88,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Layout onLogout={handleLogout} accessToken={token} user={user}>
+      <Layout onLogout={handleLogout} accessToken={token}>
           {/* Routes */}
           <Routes>
             <Route

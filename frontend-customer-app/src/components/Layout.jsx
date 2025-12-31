@@ -3,10 +3,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { io } from 'socket.io-client';
 import logo from '../assets/logo.png'
 
+export const BikeUpdatesContext = React.createContext({});
 
 export default function Layout({ children, onLogout, accessToken, user }) {
   const location = useLocation();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   // true om man står på /login-sidan
   const isLogin = location.pathname === "/login";
   const showLogout = isLogin || location.pathname === "/create_account";

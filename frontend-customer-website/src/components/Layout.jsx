@@ -3,12 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { io } from 'socket.io-client';
 import logo from '../assets/logo.png'
 
-
-const drawerWidth = 240;
-
-export default function Layout({ children, onLogout, accessToken, user }) {
+export default function Layout({ children, onLogout, accessToken }) {
   const location = useLocation();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   // true om man står på /login-sidan
   const isLogin = location.pathname === "/login";
   const showLogout = isLogin || location.pathname === "/create_account";

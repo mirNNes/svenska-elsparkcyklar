@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { returnBike, getActiveRide } from "../api/bikes";
-import { httpPost } from "../api/http";
-
 
 
 export default function CurrentRide() {
@@ -22,8 +20,8 @@ export default function CurrentRide() {
     (async () => {
       try {
         const res = await getActiveRide();
-        if (!cancelled) setRide(res.data || []);
-        console.log(res.data);
+        if (!cancelled) setRide(res || []);
+        console.log(res);
       } catch (err) {
         if (!cancelled) {
           console.activeError(err);
@@ -44,13 +42,13 @@ export default function CurrentRide() {
     setReturnError(null);
 
     try {
-      const response = await returnBike();
-      console.log(response.data);
+      const response = await returnBike(rideID);
+      console.log(response);
       navigate("/rides", { replace: true });
     } catch (err) {
       console.log(err);
       const msg =
-      err.response?.data?.error || "Fel";
+      err.response?.data?.returnError || "Kunde inte återlämna cykeln.";
       setReturnError(msg);
     } finally {
       setReturnLoading(false);

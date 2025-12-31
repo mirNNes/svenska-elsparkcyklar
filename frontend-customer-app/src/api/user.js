@@ -1,9 +1,11 @@
-import { httpGet } from "./http";
+import { api as axios } from "./http"; 
 
-export function getUSer(userID) {
-  return httpGet(`/user/${userID}`);
-}
+export const getUSer = async () => {
+  const response = await axios.get("/user/me");
+  return response.data;
+};
 
-export function editUser(user) {
-  return httpGet(`/user/edit/${user}`);
-}
+export const editUser = async () => {
+  const response = await axios.get("/user/edit/");
+  return response.data;
+};

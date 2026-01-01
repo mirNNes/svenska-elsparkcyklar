@@ -46,17 +46,29 @@ async function startRide(req, res) {
 
 // POST /ride/end - avsluta en resa
 async function endRide(req, res) {
-  const { rideId } = req.body;
+  const { rideId, endLocation } = req.body || {};
 
   if (!Number.isInteger(rideId) || rideId <= 0) {
     return res.status(400).json({ error: "Ogiltigt rideId" });
+  }
+  if (!endLocation) {
+    return res.status(400).json({ error: "endLocation krävs" });
+  }
+  const endLat = Number(endLocation?.lat);
+  const endLng = Number(endLocation?.lng);
+  if (!Number.isFinite(endLat) || !Number.isFinite(endLng)) {
+    return res.status(400).json({ error: "Ogiltig endLocation" });
   }
   const ride = await rideRepository.getRideById(rideId);
   if (!ride) return res.status(404).json({ error: "Ride not found" });
   if (ride.endedAt)
     return res.status(400).json({ error: "Ride already finished" });
 
-  const endedRide = await rideRepository.endRide(rideId);
+  // Vi kräver slutposition så att parkering/batteri blir korrekt uppdaterat.
+  const endedRide = await rideRepository.endRide(rideId, {
+    lat: endLat,
+    lng: endLng,
+  });
   // Sätt cykeln som ledig igen, Ride sparar bikeId som Mongo _id
   await bikeRepository.markBikeAsAvailableByObjectId(
     endedRide.ride ? endedRide.ride.bikeId : ride.bikeId

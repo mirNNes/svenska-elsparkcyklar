@@ -130,6 +130,20 @@ const swaggerSpec = {
           distance: { type: "number" },
           energyUsed: { type: "number" },
           price: { type: "number" },
+          startLocation: {
+            type: "object",
+            properties: {
+              lat: { type: "number" },
+              lng: { type: "number" },
+            },
+          },
+          endLocation: {
+            type: "object",
+            properties: {
+              lat: { type: "number" },
+              lng: { type: "number" },
+            },
+          },
           parkingType: { type: "string" },
           parkingFee: { type: "number" },
         },
@@ -641,8 +655,17 @@ const swaggerSpec = {
             "application/json": {
               schema: {
                 type: "object",
-                properties: { rideId: { type: "number" } },
-                required: ["rideId"],
+                properties: {
+                  rideId: { type: "number" },
+                  endLocation: {
+                    type: "object",
+                    properties: {
+                      lat: { type: "number" },
+                      lng: { type: "number" },
+                    },
+                  },
+                },
+                required: ["rideId", "endLocation"],
               },
             },
           },

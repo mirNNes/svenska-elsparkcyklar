@@ -11,6 +11,7 @@ const BASE_PRICE = 10;
 const PRICE_PER_MINUTE = 2;
 const FREE_PARKING_FEE = 10;
 const STATION_RADIUS_METERS = 50;
+const ENERGY_USED_PER_METER = 0.006;
 
 function roundMoney(value) {
   return Math.round(value * 100) / 100;
@@ -120,6 +121,11 @@ async function startRide(bikeId, userId) {
     userId: user._id,
     startedAt: new Date().toISOString(),
     endedAt: null,
+    // Jag sparar startpositionen direkt från cykeln så vi kan räkna distans senare.
+    startLocation: {
+      lat: bike.location?.lat ?? null,
+      lng: bike.location?.lng ?? null,
+    },
   });
 
   await ride.save();
@@ -127,7 +133,7 @@ async function startRide(bikeId, userId) {
 }
 
 // Enkel avslutning av resa med dummy-beräkning
-async function endRide(rideId) {
+async function endRide(rideId, endLocation) {
   const ride = await Ride.findOne({ id: rideId });
   if (!ride) {
     return { error: "Ride not found", code: "not_found" };
@@ -144,17 +150,44 @@ async function endRide(rideId) {
     0,
     (endTime - new Date(ride.startedAt)) / 60000
   );
-  ride.distance = Math.round(durationMinutes * 200); // meter
-
-  // Energi: enkelt antagande 0.6 Wh per 100 meter
-  ride.energyUsed = Math.round(ride.distance * 0.6);
+  const fallbackDistance = durationMinutes * 200;
+  const distanceFromLocations = endLocation
+    ? distanceMeters(ride.startLocation, endLocation)
+    : null;
+  const resolvedDistance = Number.isFinite(distanceFromLocations)
+    ? distanceFromLocations
+    : fallbackDistance;
+  ride.distance = Math.round(resolvedDistance); // meter
+  ride.energyUsed = Math.round(ride.distance * ENERGY_USED_PER_METER);
 
   // Pris: 10 kr start + 2 kr per minut + ev. fri-parkering
   const bike = await Bike.findById(ride.bikeId);
+  let shouldSaveBike = false;
+  if (endLocation) {
+    ride.endLocation = { lat: endLocation.lat, lng: endLocation.lng };
+    if (bike) {
+      // Vi uppdaterar cykelns position innan parkeringslogiken körs.
+      bike.location = { lat: endLocation.lat, lng: endLocation.lng };
+      shouldSaveBike = true;
+    }
+  }
   const parking = await getParkingInfo(bike);
   ride.parkingType = parking.type;
   ride.parkingFee = parking.fee;
   ride.price = roundMoney(BASE_PRICE + PRICE_PER_MINUTE * durationMinutes + parking.fee);
+
+  if (bike && Number.isFinite(bike.battery)) {
+    const drained = Math.max(0, Math.round(ride.energyUsed));
+    bike.battery = Math.max(0, Math.min(100, bike.battery - drained));
+    if (parking.type === "station") {
+      bike.battery = 100;
+    }
+    shouldSaveBike = true;
+  }
+
+  if (bike && shouldSaveBike) {
+    await bike.save();
+  }
 
   await ride.save();
 

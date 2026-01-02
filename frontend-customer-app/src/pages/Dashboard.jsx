@@ -22,7 +22,7 @@ export default function Dashboard() {
         }
       } catch (err) {
         activeRide = false;
-      } finally {
+        console.log(err);
       }
     })();
   }, []);

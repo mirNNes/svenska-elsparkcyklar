@@ -14,6 +14,7 @@ export default function Rides() {
       try {
         const res = await getAllRides();
         if (!cancelled) setRides(res || []);
+        console.log(res);
       } catch (err) {
         if (!cancelled) {
           console.error(err);
@@ -34,7 +35,9 @@ export default function Rides() {
 
   return (
     <div className="margin-div">
-      <h1>Resor</h1>
+      <div>
+        <h1>Resor</h1>
+      </div>
       {rides.length === 0 ? (
         <p>Inga resor hittades ännu.</p>
       ) : (

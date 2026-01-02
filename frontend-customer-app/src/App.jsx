@@ -133,14 +133,14 @@ export default function App() {
               }
             />
             <Route 
-              path="/rent/:bikeID" 
+              path="/rent/:bikeIDParam" 
               element={
                 <PrivateRoute token={token} loading={authLoading}>
                   <RentBike />
                 </PrivateRoute>
               } />
             <Route 
-              path="/current_ride/:rideID" 
+              path="/current_ride" 
               element={
                 <PrivateRoute token={token} loading={authLoading}>
                   <CurrentRide />

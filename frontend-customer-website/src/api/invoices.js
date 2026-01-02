@@ -1,5 +1,6 @@
-import { httpGet } from "./http";
+import { api } from "./http";
 
-export function getAllInvoices() {
-  return httpGet("/invoice/me");
-}
+export const getAllInvoices = async () => {
+  const res = await api.get("/invoice/me");
+  return res.data;
+};

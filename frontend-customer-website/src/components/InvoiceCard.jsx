@@ -1,11 +1,25 @@
 export default function InvoicesCard({ invoice }) {
+
+  function MakeDateString(date){
+    const newDate = new Date(date);
+    const day = newDate.getDate();
+    const month = newDate.getMonth();
+    const year = newDate.getFullYear();
+
+    return `${day}/${month+1}/${year}`
+
+  }
+
+  const startDate = MakeDateString(invoice.createdAt);
+  const endDate = MakeDateString(invoice.paidAt);
+
   return (
     <div className="card">
-      <h3>Invoice #{invoice.id}</h3>
-      <p>Pris:{invoice.amount}</p>
-      <p>Status:{invoice.status}</p>
-      <p>Skapad:{invoice.createdAt}</p>
-      <p>Betalad:{invoice.paidAt}</p>
+      <h3>Faktura #{invoice.id}</h3>
+      <p>Pris: {invoice.amount}kr</p>
+      <p>Status: {invoice.status}</p>
+      <p>Skapad: {startDate}</p>
+      <p>Betalad: {endDate}</p>
     </div>
   );
 }

@@ -8,6 +8,10 @@ let globalAccessToken = null;
 
 let globalRefreshToken = null;
 
+globalAccessToken = localStorage.getItem("userToken");
+globalRefreshToken = localStorage.getItem("userRefreshToken");
+
+
 // Anropas från App.jsx när man loggar in / ut
 export function setAccessToken(token) {
   globalAccessToken = token;
@@ -31,6 +35,7 @@ api.interceptors.request.use(config => {
   return config;
 });
 
+// Auto-refresh vid 401 eller logout om refresh misslyckas
 api.interceptors.response.use(
   res => res,
   async error => {
@@ -69,3 +74,4 @@ api.interceptors.response.use(
 
 export const httpGet = (path) => api.get(path);
 export const httpPost = (path, body) => api.post(path, body);
+export { api };

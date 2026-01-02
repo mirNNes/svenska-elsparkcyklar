@@ -9,7 +9,7 @@ export const getAllBikes = async () => {
 // Hyr en cykel
 export const rentBike = async (bikeId) => {
   try {
-    const response = await axios.patch("/ride/start", {
+    const response = await axios.post("/ride/start", {
       bikeId,
     });
     return response.data;
@@ -20,10 +20,14 @@ export const rentBike = async (bikeId) => {
 };
 
 // Återlämna en cykel
-export const returnBike = async (rideId) => {
+export const returnBike = async (rideId, endLat, endLng) => {
   try {
-    const response = await axios.patch("/ride/end", {
-      rideId,
+    const response = await axios.post("/ride/end", {
+      "rideId": rideId,
+      "endLocation": {
+        "lat": endLat,
+        "lng": endLng
+      }
     });
     return response.data;
   } catch (err) {

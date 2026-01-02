@@ -13,7 +13,7 @@ export default function Invoices() {
     (async () => {
       try {
         const res = await getAllInvoices();
-        if (!cancelled) setInvoices(res.data || []);
+        if (!cancelled) setInvoices(res || []);
       } catch (err) {
         if (!cancelled) {
           console.error(err);

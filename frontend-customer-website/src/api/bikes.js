@@ -1,31 +1,54 @@
-import { httpGet } from "./http";
-import { httpPost } from "./http";
+import { api as axios } from "./http"; 
 
-// Bikes
+// Hämta alla cyklar
+export const getAllBikes = async () => {
+  const response = await axios.get("/bike");
+  return response.data;
+};
 
-export function getAllBikes() {
-  return httpGet("/bike");
-}
+// Hyr en cykel
+export const rentBike = async (bikeId) => {
+  try {
+    const response = await axios.post("/ride/start", {
+      bikeId,
+    });
+    return response.data;
+  } catch (err) {
+    console.error("Error renting bike:", err);
+    throw err;
+  }
+};
 
-export function rentBike(bikeID, userID) {
-  return httpPost(`/bike/rent/${bikeID}/${userID}`);
-}
-
-export function returnBike(rentID) {
-  return httpPost(`/bike/rent-leave/${rentID}`);
-}
+// Återlämna en cykel
+export const returnBike = async (rideId, endLat, endLng) => {
+  try {
+    const response = await axios.post("/ride/end", {
+      "rideId": rideId,
+      "endLocation": {
+        "lat": endLat,
+        "lng": endLng
+      }
+    });
+    return response.data;
+  } catch (err) {
+    console.error("Error returning bike:", err);
+    throw err;
+  }
+};
 
 
 // Rides
-
-export function getAllRides() {
-  return httpGet(`/ride/me`);
+export const getAllRides = async () => {
+  const response = await axios.get("/ride/me");
+  return response.data;
 }
 
-export function getActiveRide() {
-  return httpGet(`/ride/active`);
+export const getActiveRide = async () => {
+  const response = await axios.get("/ride/active");
+  return response.data;
 }
 
-export function getRide(rideID) {
-  return httpGet(`/ride/${rideID}`);
+export const getRide = async (rideID) => {
+  const response = await axios.get(`/ride/${rideID}`);
+  return response.data;
 }

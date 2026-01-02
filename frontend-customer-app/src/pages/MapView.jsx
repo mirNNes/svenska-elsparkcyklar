@@ -27,7 +27,10 @@ export default function MapView() {
           getAllCities(),
         ]);
         if (!cancelled) {
-          setBikes(bikeRes || []);
+          let bikes = bikeRes.filter(function (bike) {
+            return bike.isAvailable === true;
+          });
+          setBikes(bikes || []);
           setCities(cityRes || []);
         }
       } catch (err) {

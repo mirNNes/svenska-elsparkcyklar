@@ -7,7 +7,8 @@ export default function RentBike() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   
-  const { bikeID } = useParams();
+  const { bikeIDParam } = useParams();
+  const bikeID = parseInt(bikeIDParam);
 
   const rentBikeBtn = async () => {
     setLoading(true);
@@ -16,7 +17,7 @@ export default function RentBike() {
     try {
       const response = await rentBike(bikeID)
       console.log(response);
-      navigate(`/current_ride/${response.id}`, { replace: true });
+      navigate(`/current_ride`, { replace: true });
     } catch (err) {
       console.log(err);
       const msg =
@@ -30,6 +31,7 @@ export default function RentBike() {
   return (
     <div className="margin-div">
       <h1>Vill du hyra sparkcykel med id {bikeID}?</h1>
+      <p>Pris: 10 kr startavgift + 2kr i minuten + eventuell parkeringsavgift</p>
       <button onClick={rentBikeBtn} disabled={loading} className="green-button">
         {loading ? "Hyr cykel..." : "Börja hyra"}
       </button>

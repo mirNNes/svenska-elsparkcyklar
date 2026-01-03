@@ -1,7 +1,13 @@
-import { api as axios } from "./http";
+import { api } from "./http";
 
 // Alla användare (admin)
 export const getAllUsers = async () => {
-  const response = await axios.get("/user");
-  return response.data;
+  const res = await api.get("/user");
+  return res.data;
+};
+
+// En användare (admin)
+export const getUserById = async (id) => {
+  const res = await api.get(`/user/${id}`);
+  return res.data;
 };

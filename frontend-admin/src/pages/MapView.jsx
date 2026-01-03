@@ -9,7 +9,7 @@ import {
   CircleMarker,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { getAllBikes, rentBike, returnBike } from "../api/bikes";
+import { getAllBikes } from "../api/bikes";
 import { getAllCities } from "../api/cities";
 import {
   getAllAllowedZones,
@@ -179,8 +179,8 @@ function BikeSideList({ bikes, selectedId, onSelect, activeRides }) {
           const activeRide = activeRides[String(b.id)];
           const availabilityText = getAvailabilityText(b);
           const rideText = getRideStatusText(b, activeRide);
-          const showLowBattery = !isBatteryEmpty(b) && battery < LOW_BATTERY_THRESHOLD;
-
+          const showLowBattery =
+            !isBatteryEmpty(b) && battery < LOW_BATTERY_THRESHOLD;
           return (
             <button
               key={b._id}
@@ -483,30 +483,6 @@ export default function MapView({ simulationRunning, refreshKey }) {
     };
   }, [selectedBikeKey, selectedBike]);
 
-  const handleRent = async (bikeId) => {
-    try {
-      await rentBike(bikeId);
-      setBikes((prev) =>
-        prev.map((b) => (b._id === bikeId ? { ...b, isAvailable: false } : b))
-      );
-    } catch (err) {
-      console.error(err);
-      alert("Kunde inte hyra cykeln");
-    }
-  };
-
-  const handleReturn = async (bikeId) => {
-    try {
-      await returnBike(bikeId);
-      setBikes((prev) =>
-        prev.map((b) => (b._id === bikeId ? { ...b, isAvailable: true } : b))
-      );
-    } catch (err) {
-      console.error(err);
-      alert("Kunde inte återlämna cykeln");
-    }
-  };
-
   if (loading) return <div>Laddar karta...</div>;
   if (error) return <div style={{ color: "red" }}>{error}</div>;
 
@@ -538,7 +514,7 @@ export default function MapView({ simulationRunning, refreshKey }) {
               setSelectedBikeId(null);
               setIsBikeSelected(false);
             }}
-            style={{ transform: "scale(1.4)" }}
+            style={{ transform: "scale(1.9)" }}
           />
           Visa bara lediga
         </label>
@@ -552,7 +528,7 @@ export default function MapView({ simulationRunning, refreshKey }) {
               setSelectedBikeId(null);
               setIsBikeSelected(false);
             }}
-            style={{ transform: "scale(1.4)" }}
+            style={{ transform: "scale(1.9)" }}
           />
           Visa bara låg batteri (&lt; {LOW_BATTERY_THRESHOLD}%)
         </label>
@@ -766,20 +742,6 @@ export default function MapView({ simulationRunning, refreshKey }) {
                   <div>Start: {formatTelemetryTime(selectedActiveRide.startedAt)}</div>
                 ) : null}
               </div>
-
-              {!isBatteryEmpty(selectedBike) ? (
-                <div style={{ marginTop: 10 }}>
-                  {selectedBike.isAvailable ? (
-                    <button onClick={() => handleRent(selectedBike._id)}>
-                      Hyr
-                    </button>
-                  ) : (
-                    <button onClick={() => handleReturn(selectedBike._id)}>
-                      Återlämna
-                    </button>
-                  )}
-                </div>
-              ) : null}
             </div>
           ) : null}
           </div>

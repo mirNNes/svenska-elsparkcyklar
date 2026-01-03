@@ -1,20 +1,26 @@
 // API-anrop för resor (rides) i admin-UI.
-import { api as axios } from "./http";
+import { api } from "./http";
 
 // Hämta aktiv resa för en cykel (admin)
 export const getActiveRideForBike = async (bikeId) => {
-  const response = await axios.get(`/ride/active/bike/${bikeId}`);
+  const response = await api.get(`/ride/active/bike/${bikeId}`);
   return response.data;
 };
 
 // Alla resor (admin)
 export const getAllRides = async () => {
-  const response = await axios.get("/ride");
-  return response.data;
+  const res = await api.get("/ride");
+  return res.data;
 };
 
 // Avsluta resa (admin)
 export const endRide = async (rideId) => {
-  const response = await axios.put(`/ride/${rideId}/end`);
+  const response = await api.post("/ride/end", { rideId });
   return response.data;
+};
+
+// Resor för specifik användare (admin)
+export const getRidesByUser = async (userId) => {
+  const res = await api.get(`/ride/user/${userId}`);
+  return res.data;
 };

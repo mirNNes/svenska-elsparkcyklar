@@ -25,7 +25,7 @@ export default function Rides() {
       setRides(ridesRes);
       setBikes(bikesRes);
       setCities(citiesRes);
-    } catch (e) {
+    } catch (err) {
       setError("Misslyckades att ladda resor");
     } finally {
       setLoading(false);
@@ -45,7 +45,7 @@ export default function Rides() {
   }, [bikes]);
 
   const citiesById = useMemo(
-    () => new Map(cities.map((c) => [c.id, c])),
+    () => new Map(cities.map((c) => [String(c._id), c])),
     [cities]
   );
 
@@ -58,89 +58,91 @@ export default function Rides() {
   if (loading) return <div style={{ padding: 16 }}>Laddar resor…</div>;
 
   return (
-    <div style={{ padding: 16 }}>
-      <h2 style={{ marginTop: 0 }}>Resor</h2>
+    <div className="rides-page">
+      <div style={{ padding: 16 }}>
+        <h2 style={{ marginTop: 0 }}>Resor</h2>
 
-      <label
-        style={{
-          display: "flex",
-          gap: ".6rem",
-          alignItems: "center",
-          fontSize: "1.1rem",
-          marginBottom: 12,
-        }}
-      >
-        <input
-          type="checkbox"
-          checked={onlyActive}
-          onChange={(e) => setOnlyActive(e.target.checked)}
-          style={{ transform: "scale(1.4)" }}
-        />
-        Bara aktiva resor
-      </label>
+        <label
+          style={{
+            display: "flex",
+            gap: ".6rem",
+            alignItems: "center",
+            fontSize: "1.1rem",
+            marginBottom: 12,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={onlyActive}
+            onChange={(e) => setOnlyActive(e.target.checked)}
+            style={{ transform: "scale(1.9)" }}
+          />
+          Visa bara aktiva resor
+        </label>
 
-      {error && <div style={{ color: "crimson", marginBottom: 12 }}>{error}</div>}
+        {error && <div style={{ color: "crimson", marginBottom: 12 }}>{error}</div>}
 
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            {["Rese-ID", "Cykel", "Stad", "Start", "Slut", "Status"].map((h) => (
-              <th
-                key={h}
-                style={{
-                  textAlign: "left",
-                  padding: "10px 8px",
-                  borderBottom: "1px solid #eee",
-                  color: "#444",
-                }}
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {filteredRides.length === 0 ? (
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
             <tr>
-              <td colSpan={6} style={{ padding: 14, color: "#666" }}>
-                Inga resor hittades.
-              </td>
+              {["Rese-ID", "Cykel", "Stad", "Start", "Slut", "Status"].map((h) => (
+                <th
+                  key={h}
+                  style={{
+                    textAlign: "left",
+                    padding: "10px 8px",
+                    borderBottom: "5px solid #003b84ff",
+                    color: "#444",
+                  }}
+                >
+                  {h}
+                </th>
+              ))}
             </tr>
-          ) : (
-            filteredRides.map((r) => {
-              const bike = bikesByObjectId.get(String(r.bikeId));
-              const city = citiesById.get(bike?.cityId);
+          </thead>
 
-              const status = r.endedAt ? "Avslutad" : "Aktiv";
+          <tbody>
+            {filteredRides.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ padding: 14, color: "#666" }}>
+                  Inga resor hittades.
+                </td>
+              </tr>
+            ) : (
+              filteredRides.map((r) => {
+                const bike = bikesByObjectId.get(String(r.bikeId));
+                const city = citiesById.get(bike?.cityId);
 
-              return (
-                <tr key={r._id ?? r.id}>
-                  <td style={{ padding: "10px 8px" }}>{r.id ?? "—"}</td>
+                const status = r.endedAt ? "Avslutad" : "Aktiv";
 
-                  <td style={{ padding: "10px 8px" }}>
-                    {bike?.id ?? "—"}
-                  </td>
+                return (
+                  <tr key={r._id ?? r.id}>
+                    <td style={{ padding: "20px 8px" }}>{r.id ?? "—"}</td>
 
-                  <td style={{ padding: "10px 8px" }}>
-                    {city?.name ?? "—"}
-                  </td>
+                    <td style={{ padding: "20px 8px" }}>
+                      {bike?.id ?? "—"}
+                    </td>
 
-                  <td style={{ padding: "10px 8px" }}>
-                    {r.startedAt ? new Date(r.startedAt).toLocaleString("sv-SE") : "—"}
-                  </td>
+                    <td style={{ padding: "20px 8px" }}>
+                      {city?.name ?? "—"}
+                    </td>
 
-                  <td style={{ padding: "10px 8px" }}>
-                    {r.endedAt ? new Date(r.endedAt).toLocaleString("sv-SE") : "—"}
-                  </td>
+                    <td style={{ padding: "20px 8px" }}>
+                      {r.startedAt ? new Date(r.startedAt).toLocaleString("sv-SE") : "—"}
+                    </td>
 
-                  <td style={{ padding: "10px 8px" }}>{status}</td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
+                    <td style={{ padding: "20px 8px" }}>
+                      {r.endedAt ? new Date(r.endedAt).toLocaleString("sv-SE") : "—"}
+                    </td>
+
+                    <td style={{ padding: "20px 8px" }}>{status}</td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

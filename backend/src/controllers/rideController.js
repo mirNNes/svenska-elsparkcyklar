@@ -124,6 +124,22 @@ async function getActiveRideByBike(req, res) {
   res.json({ ride: ride || null });
 }
 
+// GET /ride/user/:userId - resor för specifik användare (admin)
+async function getRidesByUser(req, res) {
+  const userId = Number.parseInt(req.params.userId, 10);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(400).json({ error: "Ogiltigt userId" });
+  }
+
+  try {
+    const rides = await rideRepository.getRidesByUserId(userId);
+    res.json(rides);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch rides" });
+  }
+}
+
 // GET /ride - hämta alla resor (admin)
 async function getAllRides(req, res) {
   try {
@@ -142,4 +158,5 @@ module.exports = {
   getMyActiveRide,
   getActiveRideByBike,
   getAllRides,
+  getRidesByUser,
 };

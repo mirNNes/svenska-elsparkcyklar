@@ -77,7 +77,7 @@ async function getRidesByUserId(userId) {
   // Slå upp user och använd dess _id som referens
   const user = await User.findOne({ id: userId });
   if (!user) return [];
-  return await Ride.find({ userId: user._id });
+  return await Ride.find({ userId: user._id }).sort({ startedAt: -1 });
 }
 
 async function getRidesByUserObjectId(userObjectId) {

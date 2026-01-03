@@ -81,6 +81,7 @@ export default function Layout({ children, onLogout, accessToken, user }) {
             flexDirection: "column",
             alignItems: "stretch",
             gap: 1,
+            background: "linear-gradient(135deg, #192590, #5e95f8)",
             "@media (min-width:768px)": {
               flexDirection: "row",
               alignItems: "center",
@@ -147,7 +148,7 @@ export default function Layout({ children, onLogout, accessToken, user }) {
               sx={{
                 minHeight: 40,
                 "& .MuiTabs-indicator": {
-                  backgroundColor: "#001cb7ff",
+                  background: "linear-gradient(135deg, #192590, #5e95f8)",
                 },
                 "& .MuiTab-root": {
                   fontSize: "0.85rem",

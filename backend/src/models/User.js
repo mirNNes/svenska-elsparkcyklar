@@ -19,6 +19,8 @@ const userSchema = new mongoose.Schema({
     distance: { type: Number, default: 0 }, // meter
     rides: { type: Number, default: 0 },
   },
-});
+},
+{ timestamps: true }
+);
 
 module.exports = mongoose.model("User", userSchema);

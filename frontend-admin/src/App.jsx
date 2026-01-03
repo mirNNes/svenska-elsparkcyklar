@@ -7,6 +7,7 @@ import Users from "./pages/Users";
 import Cities from "./pages/Cities";
 import Rides from "./pages/Rides";
 import Login from "./pages/Login";
+import UserDetails from "./pages/UserDetails";
 
 import {
   setAccessToken,
@@ -116,6 +117,15 @@ export default function App() {
             element={
               <PrivateRoute token={token} loading={authLoading}>
                 <Users />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/users/:userId"
+            element={
+              <PrivateRoute token={token} loading={authLoading}>
+                <UserDetails />
               </PrivateRoute>
             }
           />

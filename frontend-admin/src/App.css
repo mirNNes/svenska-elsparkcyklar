@@ -161,3 +161,225 @@ span {
 .leaflet-popup-content-wrapper {
   margin-bottom: 15px;
 }
+
+/* UserDetails page */
+.user-details {
+  padding: 2rem;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  color: #374151;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: all 0.15s ease;
+  margin-bottom: 1.5rem;
+}
+
+.back-button:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+}
+
+.user-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.user-header h2 {
+  margin: 0 0 1rem 0;
+  color: #111827;
+  font-size: 1.875rem;
+  font-weight: 600;
+}
+
+.user-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.user-info div {
+  padding: 1rem 1.25rem;
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  border-left: 7px solid #2563eb;
+}
+
+.user-info strong {
+  color: #374151;
+  font-weight: 600;
+}
+
+.user-section {
+  margin-bottom: 2.5rem;
+}
+
+.user-section h3 {
+  color: #111827;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.no-data {
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  color: #6b7280;
+  text-align: center;
+  font-style: italic;
+  border: 1px dashed #d1d5db;
+}
+
+.table-container {
+  overflow-x: auto;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  margin-bottom: 1rem;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.user-table th {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  padding: 1rem 0.875rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.user-table td {
+  padding: 1rem 0.875rem;
+  border-bottom: 1px solid #f3f4f6;
+  border: 5px solid #eaeaea;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.status-paid { 
+  background: #dcfce7; 
+  color: #166534; 
+}
+
+.status-pending { 
+  background: #fef3c7; 
+  color: #92400e; 
+}
+
+.status-unpaid { 
+  background: #fee2e2; 
+  color: #991b1b; 
+}
+
+.status-aktiv { 
+  background: #dbeafe; 
+  color: #1e40af; 
+}
+
+.price-highlight {
+  font-weight: 600;
+  color: #059669;
+}
+
+.balance-negative {
+  color: #dc2626 !important;
+}
+
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 2rem;
+  text-align: center;
+  border-radius: 0.75rem;
+}
+
+.error-state {
+  color: #dc2626;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+}
+
+@media (max-width: 768px) {
+  .user-details {
+    padding: 1.5rem;
+  }
+  
+  .user-info {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-table th,
+  .user-table td {
+    padding: 0.875rem 0.625rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Users page */
+.users-page {
+  padding: 2rem;
+  max-width: 2000px;
+  margin: 0 auto;
+}
+
+.users-page tbody tr:hover td {
+  background: rgb(222, 222, 222);
+}
+
+.users-page table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-page tbody tr td {
+  border-bottom: 2px solid rgb(215, 215, 215);
+}
+
+/* Rides page */
+.rides-page {
+  padding: 2rem;
+  max-width: 2000px;
+  margin: 0 auto;
+}
+
+.rides-page table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rides-page tbody tr td {
+  border-bottom: 2px solid rgb(215, 215, 215);
+}

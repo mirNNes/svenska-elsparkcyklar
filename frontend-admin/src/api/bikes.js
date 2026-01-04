@@ -1,15 +1,15 @@
-import { api as axios } from "./http"; 
+import { api } from "./http"; 
 
 // Hämta alla cyklar
 export const getAllBikes = async () => {
-  const response = await axios.get("/bike");
+  const response = await api.get("/bike");
   return response.data;
 };
 
 // Hyr en cykel
 export const rentBike = async (bikeId) => {
   try {
-    const response = await axios.patch(`/bike/rent/${bikeId}/admin`);
+    const response = await api.patch(`/bike/rent/${bikeId}/admin`);
     return response.data;
   } catch (err) {
     console.error("Error renting bike:", err);
@@ -20,7 +20,7 @@ export const rentBike = async (bikeId) => {
 // Återlämna en cykel
 export const returnBike = async (bikeId) => {
   try {
-    const response = await axios.patch(`/bike/return/${bikeId}/admin`);
+    const response = await api.patch(`/bike/return/${bikeId}/admin`);
     return response.data;
   } catch (err) {
     console.error("Error returning bike:", err);

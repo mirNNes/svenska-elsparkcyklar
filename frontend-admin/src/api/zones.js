@@ -1,17 +1,19 @@
-// API-anrop för stationer och zoner i admin-frontend.
-import { api as axios } from "./http";
+import { api } from "./http";
 
+// Alla stationer
 export const getAllStations = async () => {
-  const response = await axios.get("/station");
-  return response.data;
+  const res = await api.get("/station");
+  return res.data;
 };
 
+// Alla parkeringszoner
 export const getAllParkingZones = async () => {
-  const response = await axios.get("/parking-zone");
-  return response.data;
+  const res = await api.get("/parking-zone");
+  return res.data;
 };
 
+// Alla tillåtna zoner
 export const getAllAllowedZones = async () => {
-  const response = await axios.get("/allowed-zone");
-  return response.data;
+  const res = await api.get("/allowed-zone");
+  return res.data;
 };

@@ -57,6 +57,12 @@ router.post("/login", async (req, res) => {
     return res.status(401).json({ error: "Fel e-post eller lösenord" });
   }
 
+  if (user.role !== "admin") {
+    return res.status(403).json({
+      error: "Du måste vara administratör för att logga in",
+    });
+  }
+
   // JWT payload
   const payload = {
     id: user._id,

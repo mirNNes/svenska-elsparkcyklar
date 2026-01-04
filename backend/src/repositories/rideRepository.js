@@ -77,7 +77,7 @@ async function getRidesByUserId(userId) {
   // Slå upp user och använd dess _id som referens
   const user = await User.findOne({ id: userId });
   if (!user) return [];
-  return await Ride.find({ userId: user._id });
+  return await Ride.find({ userId: user._id }).sort({ startedAt: -1 });
 }
 
 async function getRidesByUserObjectId(userObjectId) {
@@ -93,7 +93,16 @@ async function getActiveRideByBikeObjectId(bikeObjectId) {
 }
 
 async function getAllRides() {
-  return await Ride.find().sort({ startedAt: -1 });
+  return await Ride.find()
+    .sort({ startedAt: -1 })
+    .populate({
+      path: "bikeId",
+      populate: {
+        path: "cityId",
+        model: "City",
+      },
+    })
+    .populate("userId");
 }
 
 async function startRide(bikeId, userId) {

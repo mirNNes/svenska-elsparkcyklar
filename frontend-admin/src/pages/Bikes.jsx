@@ -141,7 +141,6 @@ export default function Bikes() {
             onChange={(e) =>
               updateQueryParam("available", e.target.checked)
             }
-            style={{ transform: "scale(1.4)" }}
           />
           Visa bara lediga
         </label>
@@ -153,7 +152,6 @@ export default function Bikes() {
             onChange={(e) =>
               updateQueryParam("lowBattery", e.target.checked)
             }
-            style={{ transform: "scale(1.4)" }}
           />
           Visa bara låg batteri (&lt; {LOW_BATTERY_THRESHOLD}%)
         </label>

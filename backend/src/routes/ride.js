@@ -2,6 +2,7 @@ const express = require("express");
 const requireAuth = require("../middleware/requireAuth");
 const { requireRole } = require("../middleware/requireAuth");
 const rideController = require("../controllers/rideController");
+const rideRepository = require("../repositories/rideRepository");
 
 const router = express.Router();
 
@@ -31,6 +32,14 @@ router.get(
   requireAuth,
   requireRole("admin"),
   rideController.getAllRides
+);
+
+// GET /ride/user/:userId - resor för specifik användare (admin)
+router.get(
+  "/user/:userId",
+  requireAuth,
+  requireRole("admin"),
+  rideController.getRidesByUser
 );
 
 // GET /ride/:id

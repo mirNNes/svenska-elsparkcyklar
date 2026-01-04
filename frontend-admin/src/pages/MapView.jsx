@@ -3,23 +3,15 @@ import {
   MapContainer,
   TileLayer,
   Marker,
-  Popup,
   useMap,
-  Circle,
-  CircleMarker,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { getAllBikes } from "../api/bikes";
 import { getAllCities } from "../api/cities";
-import {
-  getAllAllowedZones,
-  getAllParkingZones,
-  getAllStations,
-} from "../api/zones";
 import { getActiveRideForBike } from "../api/rides";
 import { BikeUpdatesContext } from "../components/Layout";
 import L from "leaflet";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 const LOW_BATTERY_THRESHOLD = 30;
 
@@ -62,8 +54,6 @@ function getRideStatusText(bike, activeRide) {
 
 /**
  * Zooma kartan så att alla (filtrerade) cyklar syns.
- * Körs när "boundsKey" ändras (dvs när filter eller data ändras),
- * inte när man bara väljer en cykel i listan.
  */
 function FitBounds({ bikes, boundsKey, isBikeSelected }) {
   const map = useMap();
@@ -81,14 +71,13 @@ function FitBounds({ bikes, boundsKey, isBikeSelected }) {
 
     const bounds = L.latLngBounds(points);
     map.fitBounds(bounds, { padding: [40, 40] });
-    // Kör bara när boundsKey ändras så zoom inte nollställs av live-uppdateringar.
-  }, [boundsKey, map, isBikeSelected]);
+  }, [boundsKey, map, isBikeSelected, bikes]);
 
   return null;
 }
 
-/** Zooma till vald cykel (körs vid klick i listan). */
-function FlyToBike({ bike, setPauseFitBounds, markerRefs }) {
+/** Zooma till vald cykel */
+function FlyToBike({ bike, setPauseFitBounds }) {
   const map = useMap();
   const lastBikeId = useRef(null);
 
@@ -116,8 +105,8 @@ function FlyToBike({ bike, setPauseFitBounds, markerRefs }) {
   return null;
 }
 
-/** Sidolista (sök + klick för att välja cykel). */
-function BikeSideList({ bikes, selectedId, onSelect, activeRides }) {
+/** Sidolista */
+function BikeSideList({ bikes, selectedId, onSelect, activeRides, isOpen, onClose, availableOnly, lowBatteryOnly, onFilterChange, navigate }) {
   const [query, setQuery] = useState("");
 
   const list = useMemo(() => {
@@ -132,146 +121,261 @@ function BikeSideList({ bikes, selectedId, onSelect, activeRides }) {
   }, [bikes, query]);
 
   return (
-    <div
-      style={{
-        width: 320,
-        maxHeight: "70vh",
-        overflow: "auto",
-        border: "1px solid #ddd",
-        borderRadius: 8,
-        padding: 12,
-        background: "white",
-      }}
-    >
+    <>
+      {/* Overlay för mobil */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 999,
+          }}
+          className="mobile-overlay"
+        />
+      )}
+
       <div
         style={{
-          display: "flex",
-          gap: 8,
-          alignItems: "center",
-          marginBottom: 10,
-        }}
-      >
-        <strong>Cyklar</strong>
-        <span style={{ marginLeft: "auto", opacity: 0.7 }}>
-          {list.length} st
-        </span>
-      </div>
-
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Sök id…"
-        style={{
-          width: "90%",
-          padding: "8px 10px",
+          width: "100%",
+          maxWidth: 320,
+          maxHeight: "73vh",
+          overflow: "auto",
+          border: "1px solid #ddd",
           borderRadius: 8,
-          border: "1px solid #ccc",
-          marginBottom: 10,
+          padding: 12,
+          background: "white",
+          zIndex: 1000,
         }}
-      />
+        className="bike-list"
+      >
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            marginBottom: 10,
+          }}
+        >
+          <strong>Cyklar</strong>
+          <span style={{ marginLeft: "auto", opacity: 0.7 }}>
+            {list.length} st
+          </span>
+          <button
+            onClick={onClose}
+            style={{
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              fontSize: 20,
+              padding: 0,
+              display: "none",
+            }}
+            className="mobile-close-btn"
+          >
+            ✕
+          </button>
+        </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-        {list.map((b) => {
-          const isSelected = selectedId === b._id;
-          const battery = b.battery ?? 0;
-          const speedText = formatSpeed(b.speed);
-          const modeText = getBikeModeLabel(b);
-          const activeRide = activeRides[String(b.id)];
-          const availabilityText = getAvailabilityText(b);
-          const rideText = getRideStatusText(b, activeRide);
-          const showLowBattery =
-            !isBatteryEmpty(b) && battery < LOW_BATTERY_THRESHOLD;
-          return (
-            <button
-              key={b._id}
-              onClick={() => onSelect(b._id)}
-              style={{
-                textAlign: "left",
-                border: "1px solid #ddd",
-                borderRadius: 8,
-                padding: 10,
-                background: isSelected ? "#f0f7ff" : "white",
-                cursor: "pointer",
+        {/* Filter checkboxes */}
+        <div
+          style={{
+            flexDirection: "column",
+            gap: "0.5rem",
+            padding: "0.75rem",
+            background: "#f5f5f5",
+            borderRadius: 6,
+            marginBottom: 10,
+          }}
+          className="mobile-filters"
+        >
+          <strong style={{ fontSize: "0.875rem", marginBottom: "0.25rem" }}>Filter</strong>
+          <label style={{ display: "flex", gap: ".5rem", alignItems: "center", fontSize: "0.875rem" }}>
+            <input
+              type="checkbox"
+              checked={availableOnly}
+              onChange={(e) => {
+                const params = new URLSearchParams(window.location.search);
+                if (e.target.checked) {
+                  params.set('available', '1');
+                } else {
+                  params.delete('available');
+                }
+                navigate(`?${params.toString()}`);
+                onFilterChange();
               }}
-            >
-              <div
+            />
+            <span>Visa bara lediga</span>
+          </label>
+
+          <label style={{ display: "flex", gap: ".5rem", alignItems: "center", fontSize: "0.875rem" }}>
+            <input
+              type="checkbox"
+              checked={lowBatteryOnly}
+              onChange={(e) => {
+                const params = new URLSearchParams(window.location.search);
+                if (e.target.checked) {
+                  params.set('lowBattery', '1');
+                } else {
+                  params.delete('lowBattery');
+                }
+                navigate(`?${params.toString()}`);
+                onFilterChange();
+              }}
+            />
+            <span>Låg batteri (&lt; {LOW_BATTERY_THRESHOLD}%)</span>
+          </label>
+        </div>
+
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Sök id…"
+          style={{
+            width: "calc(100% - 20px)",
+            padding: "8px 10px",
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            marginBottom: 10,
+          }}
+        />
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
+          {list.map((b) => {
+            const isSelected = selectedId === b._id;
+            const battery = b.battery ?? 0;
+            const speedText = formatSpeed(b.speed);
+            const modeText = getBikeModeLabel(b);
+            const activeRide = activeRides[String(b.id)];
+            const availabilityText = getAvailabilityText(b);
+            const rideText = getRideStatusText(b, activeRide);
+            const showLowBattery =
+              !isBatteryEmpty(b) && battery < LOW_BATTERY_THRESHOLD;
+            return (
+              <button
+                key={b._id}
+                onClick={() => {
+                  onSelect(b._id);
+                  onClose();
+                }}
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 8,
-                  color: "black",
+                  textAlign: "left",
+                  border: "1px solid #ddd",
+                  borderRadius: 8,
+                  padding: 10,
+                  background: isSelected ? "#f0f7ff" : "white",
+                  cursor: "pointer",
                 }}
               >
-                <strong>Bike #{b.id}</strong>
-                <span style={{ opacity: 0.8 }}>{battery}%</span>
-              </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    color: "black",
+                  }}
+                >
+                  <strong>Bike #{b.id}</strong>
+                  <span style={{ opacity: 0.8 }}>{battery}%</span>
+                </div>
 
-              <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
-                {availabilityText}
-                {showLowBattery ? " • Låg batteri" : ""}
-              </div>
-              <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
-                Hastighet: {speedText} • Läge: {modeText}
-              </div>
-              <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
-                Resa: {rideText}
-              </div>
-            </button>
-          );
-        })}
+                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+                  {availabilityText}
+                  {showLowBattery ? " • Låg batteri" : ""}
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+                  Hastighet: {speedText} • Läge: {modeText}
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+                  Resa: {rideText}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .bike-list {
+            position: fixed;
+            left: 0;
+            top: 90px;
+            bottom: 0;
+            max-width: 85vw;
+            max-height: calc(100vh - 60px);
+            border-radius: 0 8px 8px 0;
+            transform: translateX(${isOpen ? '0' : '-100%'});
+            transition: transform 0.3s ease-in-out;
+          }
+          
+          .mobile-close-btn {
+            display: block;
+          }
+
+          .mobile-filters {
+            display: flex;
+          }
+        }
+        
+        @media (min-width: 769px) {
+          .mobile-overlay {
+            display: none;
+          }
+
+          .mobile-filters {
+            display: none;
+          }
+        }
+      `}</style>
+    </>
   );
 }
 
 export default function MapView({ simulationRunning, refreshKey }) {
   const [bikes, setBikes] = useState([]);
   const [cities, setCities] = useState([]);
-  const [stations, setStations] = useState([]);
-  const [parkingZones, setParkingZones] = useState([]);
-  const [allowedZones, setAllowedZones] = useState([]);
   const [activeRides, setActiveRides] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const markerRefs = useRef({});
   const [isBikeSelected, setIsBikeSelected] = useState(false);
   const [pauseFitBounds, setPauseFitBounds] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const bikeUpdates = useContext(BikeUpdatesContext);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  const bikeIcon = useMemo(
-    () =>
-      new L.Icon({
-        iconUrl: "/scooter.png",
-        iconSize: [52, 52],
-        iconAnchor: [16, 32],
-      }),
-    []
-  );
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-  // Selected bike from list
+  const bikeIcon = useMemo(() => {
+    const iconSize = isMobile ? 32 : 52;
+    const iconAnchor = isMobile ? 16 : 16;
+    
+    return new L.Icon({
+      iconUrl: "/scooter.png",
+      iconSize: [iconSize, iconSize],
+      iconAnchor: [iconAnchor, iconAnchor * 2],
+    });
+  }, [isMobile]);
+
   const [selectedBikeId, setSelectedBikeId] = useState(null);
-
-  // Key that triggers FitBounds (data/filters change)
   const boundsKeyRef = useRef(0);
-
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const cityId = searchParams.get("city");
   const availableOnly = searchParams.get("available") === "1";
   const lowBatteryOnly = searchParams.get("lowBattery") === "1";
-
-  // Uppdaterar filter via Url-query params
-  function updateQueryParam(key, enabled) {
-    const params = new URLSearchParams(searchParams);
-
-    if (enabled) {
-      params.set(key, "1");
-    } else {
-      params.delete(key);
-    }
-
-    setSearchParams(params);
-  }
 
   useEffect(() => {
     if (!selectedBikeId) {
@@ -284,20 +388,14 @@ export default function MapView({ simulationRunning, refreshKey }) {
 
     (async () => {
       try {
-        const [bikeRes, cityRes, stationRes, parkingRes, allowedRes] =
+        const [bikeRes, cityRes] =
           await Promise.all([
             getAllBikes(),
             getAllCities(),
-            getAllStations(),
-            getAllParkingZones(),
-            getAllAllowedZones(),
           ]);
         if (!cancelled) {
           setBikes(bikeRes || []);
           setCities(cityRes?.data || cityRes || []);
-          setStations(stationRes || []);
-          setParkingZones(parkingRes || []);
-          setAllowedZones(allowedRes || []);
         }
       } catch (err) {
         if (!cancelled) {
@@ -318,7 +416,6 @@ export default function MapView({ simulationRunning, refreshKey }) {
     const updates = bikeUpdates || {};
     if (!Object.keys(updates).length) return;
 
-    // Uppdatera position/batteri live när vi får socket-events
     setBikes((prev) =>
       prev.map((bike) => {
         const update = updates[bike.id];
@@ -356,22 +453,11 @@ export default function MapView({ simulationRunning, refreshKey }) {
   useEffect(() => {
     let cancelled = false;
 
-    // Uppdatera cykel-listan när vi explicit triggar en refresh
     (async () => {
       try {
-        const [bikeRes, stationRes, parkingRes, allowedRes] = await Promise.all(
-          [
-            getAllBikes(),
-            getAllStations(),
-            getAllParkingZones(),
-            getAllAllowedZones(),
-          ]
-        );
+        const bikeRes = await getAllBikes();
         if (!cancelled) {
           setBikes(bikeRes || []);
-          setStations(stationRes || []);
-          setParkingZones(parkingRes || []);
-          setAllowedZones(allowedRes || []);
         }
       } catch (err) {
         if (!cancelled) console.error(err);
@@ -399,7 +485,6 @@ export default function MapView({ simulationRunning, refreshKey }) {
       }
     };
 
-    // Hämta cyklar löpande när simuleringen är igång
     const intervalId = setInterval(pollBikes, 8000);
     pollBikes();
 
@@ -441,7 +526,6 @@ export default function MapView({ simulationRunning, refreshKey }) {
     return { total, available, rented, lowBattery, outOfBattery };
   }, [filteredBikes]);
 
-  // bump boundsKey when filters/data changes
   const boundsKey = useMemo(() => {
     if (pauseFitBounds) return boundsKeyRef.current;
 
@@ -487,80 +571,113 @@ export default function MapView({ simulationRunning, refreshKey }) {
   if (error) return <div style={{ color: "red" }}>{error}</div>;
 
   return (
-    <div style={{ height: "80vh", width: "100%" }}>
-      <h1>
-        Karta
-        {cityId && (
-          <span style={{ opacity: 0.6, fontSize: "1.6rem" }}> – filtrerad</span>
-        )}
-      </h1>
+    <div style={{ width: "100%", position: "relative" }}>
+      {/* Header with title and mobile menu button */}
+      <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.5rem" }}>
+        <button
+          onClick={() => setDrawerOpen(true)}
+          style={{
+            background: "#1976d2",
+            color: "white",
+            border: "none",
+            borderRadius: 8,
+            padding: "0.5rem 1rem",
+            fontSize: "0.875rem",
+            cursor: "pointer",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            flexShrink: 0,
+            alignItems: "center",
+            gap: "0.5rem",
+            fontWeight: 500,
+          }}
+          className="mobile-toggle-btn"
+          aria-label="Visa cykellista och filter"
+        >
+          <span style={{ fontSize: "1.2rem" }}>☰</span>
+          <span>Cyklar & Filter</span>
+        </button>
+        
+        <h1
+          className="map-title"
+          style={{ fontSize: "clamp(1.5rem, 5vw, 2.5rem)", margin: 0 }}
+        >
+          Karta
+          {cityId && (
+            <span style={{ opacity: 0.6, fontSize: "clamp(1rem, 3vw, 1.6rem)" }}> – filtrerad</span>
+          )}
+        </h1>
+      </div>
 
       {/* Controls + stats */}
       <div
         style={{
           display: "flex",
-          gap: "1rem",
-          alignItems: "center",
+          gap: "0.5rem",
+          alignItems: "flex-start",
           flexWrap: "wrap",
           padding: "0.5rem 0",
+          fontSize: "clamp(0.875rem, 2vw, 1rem)",
+          marginBottom: "0.5rem",
         }}
+        className="controls-section"
       >
-        <label style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
-          <input
-            type="checkbox"
-            checked={availableOnly}
-            onChange={(e) => {
-              updateQueryParam("available", e.target.checked);
-              setSelectedBikeId(null);
-              setIsBikeSelected(false);
-            }}
-            style={{ transform: "scale(1.9)" }}
-          />
-          Visa bara lediga
-        </label>
+        <label style={{ display: "flex", gap: ".5rem", alignItems: "center", whiteSpace: "nowrap" }}>
+        <input
+          type="checkbox"
+          checked={availableOnly}
+          onChange={(e) => {
+            const params = new URLSearchParams(window.location.search);
+            if (e.target.checked) {
+              params.set('available', '1');
+            } else {
+              params.delete('available');
+            }
+            navigate(`?${params.toString()}`);
+            setSelectedBikeId(null);
+            setIsBikeSelected(false);
+          }}
+        />
+        <span className="label-text">Visa bara lediga</span>
+      </label>
 
-        <label style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
-          <input
-            type="checkbox"
-            checked={lowBatteryOnly}
-            onChange={(e) => {
-              updateQueryParam("lowBattery", e.target.checked);
-              setSelectedBikeId(null);
-              setIsBikeSelected(false);
-            }}
-            style={{ transform: "scale(1.9)" }}
-          />
-          Visa bara låg batteri (&lt; {LOW_BATTERY_THRESHOLD}%)
-        </label>
+      <label style={{ display: "flex", gap: ".5rem", alignItems: "center", whiteSpace: "nowrap" }}>
+        <input
+          type="checkbox"
+          checked={lowBatteryOnly}
+          onChange={(e) => {
+            const params = new URLSearchParams(window.location.search);
+            if (e.target.checked) {
+              params.set('lowBattery', '1');
+            } else {
+              params.delete('lowBattery');
+            }
+            navigate(`?${params.toString()}`);
+            setSelectedBikeId(null);
+            setIsBikeSelected(false);
+          }}
+        />
+        <span className="label-text">Låg batteri (&lt; {LOW_BATTERY_THRESHOLD}%)</span>
+      </label>
 
         <div
           style={{
-            marginLeft: "auto",
             display: "flex",
-            gap: "1rem",
+            gap: "0.5rem",
             flexWrap: "wrap",
+            marginLeft: "auto",
           }}
+          className="stats-section"
         >
-          <span>
-            <strong>Totalt:</strong> {stats.total}
-          </span>
-          <span>
-            <strong>Lediga:</strong> {stats.available}
-          </span>
-          <span>
-            <strong>Uthyrda:</strong> {stats.rented}
-          </span>
-          <span>
-            <strong>Låg batteri:</strong> {stats.lowBattery}
-          </span>
-          <span>
-            <strong>Batteri slut:</strong> {stats.outOfBattery}
-          </span>
+          <span><strong>Total:</strong> {stats.total}</span>
+          <span><strong>Lediga:</strong> {stats.available}</span>
+          <span><strong>Uthyrda:</strong> {stats.rented}</span>
+          <span><strong>Låg batteri:</strong> {stats.lowBattery}</span>
+          <span><strong>Slut:</strong> {stats.outOfBattery}</span>
         </div>
       </div>
 
       {/* List + Map */}
-      <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+      <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }} className="main-content">
         <BikeSideList
           bikes={filteredBikes}
           selectedId={selectedBikeId}
@@ -569,102 +686,41 @@ export default function MapView({ simulationRunning, refreshKey }) {
             setIsBikeSelected(true);
           }}
           activeRides={activeRides}
+          isOpen={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          availableOnly={availableOnly}
+          lowBatteryOnly={lowBatteryOnly}
+          onFilterChange={() => {
+            setSelectedBikeId(null);
+            setIsBikeSelected(false);
+          }}
+          navigate={navigate}
         />
 
-        <div style={{ flex: 1 }}>
-          <div style={{ position: "relative", height: "70vh" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            className="map-wrapper"
+            style={{ position: "relative" }}
+          >
             <MapContainer
               center={defaultCenter}
               zoom={5}
               style={{ height: "100%", width: "100%" }}
+              zoomControl={false}
             >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
             />
 
-            {/* Tillåtna zoner (blå) */}
-            {allowedZones.map((zone) => {
-              const lat = zone.center?.lat;
-              const lng = zone.center?.lng;
-              if (typeof lat !== "number" || typeof lng !== "number")
-                return null;
-              return (
-                <Circle
-                  key={`allowed-${zone._id}`}
-                  center={[lat, lng]}
-                  radius={zone.radius || 0}
-                  pathOptions={{
-                    color: "#1976d2",
-                    fillColor: "#1976d2",
-                    fillOpacity: 0.08,
-                    weight: 1,
-                  }}
-                />
-              );
-            })}
-
-            {/* Parkeringszoner (grön) */}
-            {parkingZones.map((zone) => {
-              const lat = zone.center?.lat;
-              const lng = zone.center?.lng;
-              if (typeof lat !== "number" || typeof lng !== "number")
-                return null;
-              return (
-                <Circle
-                  key={`parking-${zone._id}`}
-                  center={[lat, lng]}
-                  radius={zone.radius || 0}
-                  pathOptions={{
-                    color: "#2e7d32",
-                    fillColor: "#2e7d32",
-                    fillOpacity: 0.12,
-                    weight: 1,
-                  }}
-                />
-              );
-            })}
-
-            {/* Laddstationer (orange) */}
-            {stations.map((station) => {
-              const lat = station.location?.lat;
-              const lng = station.location?.lng;
-              if (typeof lat !== "number" || typeof lng !== "number")
-                return null;
-              return (
-                <CircleMarker
-                  key={`station-${station._id}`}
-                  center={[lat, lng]}
-                  radius={6}
-                  pathOptions={{
-                    color: "#ef6c00",
-                    fillColor: "#ef6c00",
-                    fillOpacity: 0.9,
-                    weight: 1,
-                  }}
-                >
-                  <Popup>
-                    <div>
-                      <strong>{station.name}</strong>
-                      <br />
-                      Kapacitet: {station.capacity}
-                      <br />
-                      Cyklar: {station.currentBikes}
-                    </div>
-                  </Popup>
-                </CircleMarker>
-              );
-            })}
-
             <FitBounds
               bikes={filteredBikes}
-              boundsKey={simulationRunning ? null : boundsKey}
+              boundsKey={boundsKey}
               isBikeSelected={isBikeSelected}
             />
             <FlyToBike
               bike={selectedBike}
               setPauseFitBounds={setPauseFitBounds}
-              markerRefs={markerRefs}
             />
 
             {filteredBikes.map((bike) => {
@@ -678,9 +734,6 @@ export default function MapView({ simulationRunning, refreshKey }) {
                   key={bike._id}
                   position={[lat, lng]}
                   icon={bikeIcon}
-                  ref={(ref) => {
-                    if (ref) markerRefs.current[bike._id] = ref;
-                  }}
                   eventHandlers={{
                     click: () => {
                       setSelectedBikeId(bike._id);
@@ -692,8 +745,9 @@ export default function MapView({ simulationRunning, refreshKey }) {
             })}
           </MapContainer>
 
-          {selectedBike ? (
+          {selectedBike && (
             <div
+              className="bike-info-popup"
               style={{
                 position: "absolute",
                 top: 16,
@@ -704,6 +758,7 @@ export default function MapView({ simulationRunning, refreshKey }) {
                 borderRadius: 10,
                 boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
                 width: 260,
+                maxWidth: "calc(100vw - 32px)",
               }}
             >
               <div
@@ -726,6 +781,7 @@ export default function MapView({ simulationRunning, refreshKey }) {
                     cursor: "pointer",
                     fontSize: 16,
                   }}
+                  aria-label="Stäng"
                 >
                   ✕
                 </button>
@@ -743,15 +799,90 @@ export default function MapView({ simulationRunning, refreshKey }) {
                 ) : null}
               </div>
             </div>
-          ) : null}
+          )}
           </div>
 
-          <p style={{ marginTop: "0.5rem", color: "#555" }}>
+          <p style={{ marginTop: "0.5rem", color: "#555", fontSize: "0.875rem" }}>
             Tips: Om flera cyklar står på samma plats kan ikoner ligga på
             varandra — zooma in för att se dem tydligare.
           </p>
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .mobile-toggle-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          
+          .main-content {
+            flex-direction: column;
+          }
+          
+          .controls-section {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.75rem;
+          }
+          
+          .controls-section > div:first-child {
+            display: none;
+          }
+          
+          .stats-section {
+            margin-left: 0;
+            margin-top: 0;
+            font-size: 0.8rem;
+            gap: 0.75rem;
+            justify-content: space-between;
+          }
+          
+          .label-text {
+            font-size: 0.9rem;
+          }
+
+          .map-title {
+            display: none;
+          }
+
+          .mobile-overlay {
+            touch-action: none;
+          }
+
+          .map-wrapper {
+            margin-top: 0.5rem;
+          }
+
+          .bike-info-popup {
+            position: fixed !important;
+            top: auto !important;
+            bottom: 16px !important;
+            left: 16px !important;
+            right: 16px !important;
+            width: auto !important;
+            max-width: none !important;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .stats-section span {
+            font-size: 0.75rem;
+          }
+
+          .stats-section {
+            font-size: 0.75rem;
+            gap: 0.5rem;
+          }
+
+          input[type=checkbox] {
+            display: inline-block;
+            transform: scale(1);
+            transform-origin: left center;
+          }
+        }
+      `}</style>
     </div>
   );
 }

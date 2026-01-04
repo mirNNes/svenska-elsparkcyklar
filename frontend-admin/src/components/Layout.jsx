@@ -69,7 +69,8 @@ export default function Layout({ children, onLogout, accessToken, user }) {
     <Box
       sx={{
         display: "flex",
-        minHeight: "100vh",
+        height: "100vh",
+        overflow: "hidden",
         flexDirection: isMobile ? "column" : "row",
       }}
     >
@@ -218,7 +219,7 @@ export default function Layout({ children, onLogout, accessToken, user }) {
           flexGrow: 1,
           p: 3,
           mt: 8,
-          ...(isMobile ? { ml: 0 } : { ml: "20px" }),
+          overflow: "auto",
         }}
       >
         {/* Gör socket-uppdateringar tillgängliga för alla sidor */}

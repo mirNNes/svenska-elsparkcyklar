@@ -123,32 +123,58 @@ export default function UserDetails() {
         {rides.length === 0 ? (
           <div className="no-data">Inga resor hittades.</div>
         ) : (
-          <div className="table-container">
-            <table className="user-table">
-              <thead>
-                <tr>
-                  {["ID", "Start", "Slut", "Distans (m)", "Pris"].map((h) => (
-                    <th key={h}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rides.map((r) => (
-                  <tr key={r._id}>
-                    <td>{r.id}</td>
-                    <td>{formatDate(r.startedAt)}</td>
-                    <td>
-                      {r.endedAt ? formatDate(r.endedAt) : "Pågår"}
-                    </td>
-                    <td>{r.distance ?? "-"}</td>
-                    <td className="price-highlight">
-                      {Number.isFinite(r.price) ? `${r.price} kr` : "-"}
-                    </td>
+          <>
+            {/* Desktop table */}
+            <div className="table-container desktop-table">
+              <table className="user-table">
+                <thead>
+                  <tr>
+                    {["ID", "Start", "Slut", "Distans (m)", "Pris"].map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {rides.map((r) => (
+                    <tr key={r._id}>
+                      <td>{r.id}</td>
+                      <td>{formatDate(r.startedAt)}</td>
+                      <td>
+                        {r.endedAt ? formatDate(r.endedAt) : "Pågår"}
+                      </td>
+                      <td>{r.distance ?? "-"}</td>
+                      <td className="price-highlight">
+                        {Number.isFinite(r.price) ? `${r.price} kr` : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="mobile-cards">
+              {rides.map((r) => (
+                <div key={r._id} className="detail-card">
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+                    <strong style={{ fontSize: "1.1rem" }}>Resa #{r.id}</strong>
+                    <span className="price-highlight" style={{ fontSize: "1rem", fontWeight: 600 }}>
+                      {Number.isFinite(r.price) ? `${r.price} kr` : "-"}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "0.9rem", color: "#666", marginBottom: "0.25rem" }}>
+                    <strong>Start:</strong> {formatDate(r.startedAt)}
+                  </div>
+                  <div style={{ fontSize: "0.9rem", color: "#666", marginBottom: "0.25rem" }}>
+                    <strong>Slut:</strong> {r.endedAt ? formatDate(r.endedAt) : "Pågår"}
+                  </div>
+                  <div style={{ fontSize: "0.9rem", color: "#666" }}>
+                    <strong>Distans:</strong> {r.distance ? `${r.distance} m` : "-"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
@@ -159,35 +185,98 @@ export default function UserDetails() {
         {invoices.length === 0 ? (
           <div className="no-data">Inga fakturor hittades.</div>
         ) : (
-          <div className="table-container">
-            <table className="user-table">
-              <thead>
-                <tr>
-                  {["ID", "Belopp", "Status", "Skapad"].map((h) => (
-                    <th key={h}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((i) => (
-                  <tr key={i._id}>
-                    <td>{i.id}</td>
-                    <td className="price-highlight">{i.amount} kr</td>
-                    <td>
-                      <span
-                        className={`status-badge ${getStatusClass(i.status)}`}
-                      >
-                        {i.status}
-                      </span>
-                    </td>
-                    <td>{formatDate(i.createdAt)}</td>
+          <>
+            {/* Desktop table */}
+            <div className="table-container desktop-table">
+              <table className="user-table">
+                <thead>
+                  <tr>
+                    {["ID", "Belopp", "Status", "Skapad"].map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {invoices.map((i) => (
+                    <tr key={i._id}>
+                      <td>{i.id}</td>
+                      <td className="price-highlight">{i.amount} kr</td>
+                      <td>
+                        <span
+                          className={`status-badge ${getStatusClass(i.status)}`}
+                        >
+                          {i.status}
+                        </span>
+                      </td>
+                      <td>{formatDate(i.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="mobile-cards">
+              {invoices.map((i) => (
+                <div key={i._id} className="detail-card">
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem", alignItems: "center" }}>
+                    <strong style={{ fontSize: "1.1rem" }}>Faktura #{i.id}</strong>
+                    <span
+                      className={`status-badge ${getStatusClass(i.status)}`}
+                    >
+                      {i.status}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "0.9rem", color: "#666", marginBottom: "0.25rem" }}>
+                    <strong>Belopp:</strong> <span className="price-highlight">{i.amount} kr</span>
+                  </div>
+                  <div style={{ fontSize: "0.9rem", color: "#666" }}>
+                    <strong>Skapad:</strong> {formatDate(i.createdAt)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
+
+      <style>{`
+        .detail-card {
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          padding: 1rem;
+          margin-bottom: 0.75rem;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .mobile-cards {
+          display: none;
+        }
+
+        @media (max-width: 768px) {
+          .desktop-table {
+            display: none;
+          }
+
+          .mobile-cards {
+            display: block;
+          }
+
+          .user-header h2 {
+            font-size: 1.5rem;
+          }
+
+          .user-section h3 {
+            font-size: 1.25rem;
+          }
+
+          .back-button {
+            font-size: 0.9rem;
+            padding: 0.6rem 0.8rem;
+          }
+        }
+      `}</style>
     </div>
   );
 }

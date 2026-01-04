@@ -7,6 +7,9 @@ const AllowedZone = require("../models/AllowedZone");
 const seedData = require("../seedData");
 const requireAuth = require("../middleware/requireAuth");
 const { requireRole } = require("../middleware/requireAuth");
+const Ride = require("../models/Ride");
+const Invoice = require("../models/Invoice");
+const User = require("../models/User");
 
 const router = express.Router();
 
@@ -15,9 +18,12 @@ router.post("/reset-seed", requireAuth, requireRole("admin"), async (req, res) =
   try {
     await City.deleteMany({});
     await Bike.deleteMany({});
+    await Ride.deleteMany({});
+    await Invoice.deleteMany({}); 
     await Station.deleteMany({});
     await ParkingZone.deleteMany({});
     await AllowedZone.deleteMany({});
+    await User.updateMany({}, { $set: { balance: 100 } });
     await seedData();
     res.json({ message: "Seed-data återställd" });
   } catch (err) {

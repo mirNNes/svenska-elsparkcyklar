@@ -93,7 +93,16 @@ async function getActiveRideByBikeObjectId(bikeObjectId) {
 }
 
 async function getAllRides() {
-  return await Ride.find().sort({ startedAt: -1 });
+  return await Ride.find()
+    .sort({ startedAt: -1 })
+    .populate({
+      path: "bikeId",
+      populate: {
+        path: "cityId",
+        model: "City",
+      },
+    })
+    .populate("userId");
 }
 
 async function startRide(bikeId, userId) {

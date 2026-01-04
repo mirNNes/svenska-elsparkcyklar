@@ -19,19 +19,18 @@ h3 {
   margin: 1.2rem;
 }
 
-p,
-li,
-a,
-button,
-input,
-label,
-div,
-span {
+body {
   font-size: 1.1rem;
 }
 
 .read-the-docs {
   color: #6b7280;
+}
+
+input[type="checkbox"] {
+  display: inline-block;
+  transform: scale(1.9);
+  transform-origin: left center;
 }
 
 /* Login page */
@@ -160,6 +159,14 @@ span {
 
 .leaflet-popup-content-wrapper {
   margin-bottom: 15px;
+}
+
+.mobile-toggle-btn {
+  display: none;
+}
+
+.map-wrapper {
+  height: 60vh;
 }
 
 /* UserDetails page */
@@ -332,22 +339,6 @@ span {
   border: 1px solid #fecaca;
 }
 
-@media (max-width: 768px) {
-  .user-details {
-    padding: 1.5rem;
-  }
-  
-  .user-info {
-    grid-template-columns: 1fr;
-  }
-  
-  .user-table th,
-  .user-table td {
-    padding: 0.875rem 0.625rem;
-    font-size: 0.95rem;
-  }
-}
-
 /* Users page */
 .users-page {
   padding: 2rem;
@@ -368,6 +359,10 @@ span {
   border-bottom: 2px solid rgb(215, 215, 215);
 }
 
+.users-search-input {
+  max-width: 400px;
+}
+
 /* Rides page */
 .rides-page {
   padding: 2rem;
@@ -382,4 +377,64 @@ span {
 
 .rides-page tbody tr td {
   border-bottom: 2px solid rgb(215, 215, 215);
+}
+
+@media (max-width: 768px) {
+  .user-details {
+    padding: 1.5rem;
+  }
+  
+  .user-info {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-table th,
+  .user-table td {
+    padding: 0.875rem 0.625rem;
+    font-size: 0.95rem;
+  }
+
+  .map-wrapper {
+    height: 55vh;
+  }
+
+  .users-page {
+    padding: 0.2rem;
+  }
+
+  .users-page h2 {
+    margin: 0 0 1rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  input[type=checkbox] {
+    display: inline-block;
+    transform: scale(1);
+    transform-origin: left center;
+  }
+
+  .users-page {
+    padding: 0.2rem;
+  }
+
+  .users-header input {
+    width: none
+  }
+}
+
+@media (max-width: 480px) {
+  input[type=checkbox] {
+    display: inline-block;
+    transform: scale(1);
+    transform-origin: left center;
+  }
+
+  .users-page {
+    padding: 0.2rem;
+  }
+
+  .users-search-input {
+    width: auto;
+  }
 }

@@ -57,9 +57,13 @@ export default function Login({ onLogin }) {
       // Gå till dashboard
       navigate("/", { replace: true });
     } catch (err) {
-      const msg =
-        err.response?.data?.error || "Felaktig e-post eller lösenord";
-      setError(msg);
+      if (err.response?.status === 403) {
+        setError("Du måste vara administratör för att logga in");
+      } else if (err.response?.status === 401) {
+        setError("Fel e-post eller lösenord");
+      } else {
+        setError("Ett oväntat fel inträffade");
+      }
     } finally {
       setLoading(false);
     }

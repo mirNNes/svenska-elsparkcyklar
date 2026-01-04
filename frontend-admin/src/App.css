@@ -152,7 +152,7 @@ input[type="checkbox"] {
 
 .login-error {
   margin-top: 0.75rem;
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: #b91c1c;
   text-align: center;
 }

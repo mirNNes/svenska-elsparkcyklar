@@ -23,18 +23,24 @@ export default function Login({ onLogin }) {
       return;
     }
 
-    if (accessToken && refreshToken) {
-      const user = {
-        id: params.get("id"),
-        email: params.get("email"),
-        role: params.get("role"),
-        username: params.get("username"),
-        name: params.get("name"),
-      };
+  if (accessToken && refreshToken) {
+    const user = {
+      id: params.get("id"),
+      email: params.get("email"),
+      role: params.get("role"),
+      username: params.get("username"),
+      name: params.get("name"),
+    };
 
-      onLogin(accessToken, refreshToken, user);
-      navigate("/", { replace: true });
+    if (user.role !== "admin") {
+      setError("Du måste vara administratör för att logga in");
+      navigate("/login", { replace: true });
+      return;
     }
+
+    onLogin(accessToken, refreshToken, user);
+    navigate("/", { replace: true });
+  }
   }, [navigate, onLogin]);
 
   async function handleSubmit(e) {
@@ -48,18 +54,18 @@ export default function Login({ onLogin }) {
         password,
       });
 
-      // Backend svarar med access_token, refresh_token och user
       const { access_token, refresh_token, user } = response.data;
 
-      // Skicka vidare till App.jsx
-      onLogin(access_token, refresh_token, user);
+      if (user.role !== "admin") {
+        setError("Du måste vara administratör för att logga in");
+        setLoading(false);
+        return;
+      }
 
-      // Gå till dashboard
+      onLogin(access_token, refresh_token, user);
       navigate("/", { replace: true });
     } catch (err) {
-      if (err.response?.status === 403) {
-        setError("Du måste vara administratör för att logga in");
-      } else if (err.response?.status === 401) {
+      if (err.response?.status === 401) {
         setError("Fel e-post eller lösenord");
       } else {
         setError("Ett oväntat fel inträffade");

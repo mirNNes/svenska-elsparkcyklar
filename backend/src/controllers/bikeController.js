@@ -1,5 +1,6 @@
 const bikeRepository = require("../repositories/bikeRepository");
 const userRepository = require("../repositories/userRepository");
+const stationRepository = require("../repositories/stationRepository");
 
 async function getAllBikes(req, res) {
   const bikes = await bikeRepository.getAllBikes();
@@ -44,8 +45,26 @@ async function startRent(req, res) {
 
   if (!Number.isInteger(bikeId) || bikeId <= 0)
     return res.status(400).json({ error: "Ogiltigt bikeId" });
+
   const bike = await bikeRepository.getBikeById(bikeId);
+
+  if (bike && bike.currentStationId) {
+    const station = await stationRepository.getStationById(bike.currentStationId);
+
+    if (station && station.currentBikes > 0) {
+      station.currentBikes -= 1;
+      await station.save();
+    }
+
+    // Rensa station-koppling på cykeln
+    await bikeRepository.updateBikeTelemetry(bikeId, {
+      currentStationId: null,
+      isCharging: false,
+    });
+  }
+
   let user;
+
   if (isAdmin) {
     if (!Number.isInteger(userId) || userId <= 0)
       return res.status(400).json({ error: "Ogiltigt userId" });
@@ -56,6 +75,7 @@ async function startRent(req, res) {
     user = await userRepository.getUserByObjectId(userObjectId);
     if (user) userId = user.id;
   }
+
   if (!user) return res.status(404).json({ error: "User not found" });
   if (!bike) return res.status(404).json({ error: "Bike not found" });
   if (bike.isOperational === false)
@@ -204,6 +224,50 @@ async function enableBike(req, res) {
   return res.json(updatedBike);
 }
 
+async function moveBikeToStation(req, res) {
+  const bikeId = Number.parseInt(req.params.bikeId, 10);
+  const stationId = Number.parseInt(req.params.stationId, 10);
+
+  if (!Number.isInteger(bikeId) || !Number.isInteger(stationId)) {
+    return res.status(400).json({ error: "Ogiltigt id" });
+  }
+
+  const station = await stationRepository.getStationById(stationId);
+  if (!station) {
+    return res.status(404).json({ error: "Station not found" });
+  }
+
+  if (station.capacity > 0 && station.currentBikes >= station.capacity) {
+    return res.status(400).json({ error: "Stationen är full" });
+  }
+
+  const bike = await bikeRepository.moveBikeToStation(
+    bikeId,
+    {
+      lat: station.location.lat,
+      lng: station.location.lng,
+    },
+    {
+      isAvailable: false,
+      isCharging: true,
+      currentStationId: station.id,
+    }
+  );
+
+  if (!bike) {
+    return res.status(404).json({ error: "Bike not found" });
+  }
+
+  station.currentBikes += 1;
+  await station.save();
+
+  return res.json({
+    message: "Bike moved to charging station",
+    bike,
+    station,
+  });
+}
+
 module.exports = {
   getAllBikes,
   getBikeById,
@@ -214,4 +278,5 @@ module.exports = {
   updateTelemetry,
   disableBike,
   enableBike,
+  moveBikeToStation,
 };

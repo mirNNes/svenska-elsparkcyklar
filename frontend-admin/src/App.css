@@ -405,6 +405,12 @@ input[type="checkbox"] {
   .users-page h2 {
     margin: 0 0 1rem 0;
   }
+
+  .card select {
+    max-width: 100%;
+    font-size: 1rem;
+    padding: 0.7rem 0.75rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -421,9 +427,7 @@ input[type="checkbox"] {
   .users-header input {
     width: none
   }
-}
 
-@media (max-width: 480px) {
   input[type=checkbox] {
     display: inline-block;
     transform: scale(1);
@@ -437,4 +441,30 @@ input[type="checkbox"] {
   .users-search-input {
     width: auto;
   }
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 10px;
+}
+
+.leaflet-popup-content {
+  font-size: 0.95rem;
+}
+
+.card select {
+  width: 100%;
+  max-width: 380px;
+
+  padding: 0.6rem 0.75rem;
+  padding-right: 2.2rem;
+
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: #111827;
+
+  cursor: pointer;
 }

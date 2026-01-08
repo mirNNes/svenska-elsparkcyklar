@@ -27,3 +27,10 @@ export const returnBike = async (bikeId) => {
     throw err;
   }
 };
+
+export const moveBikeToStation = async (bikeId, stationId) => {
+  const res = await api.patch(
+    `/bike/${bikeId}/move-to-station/${stationId}`
+  );
+  return res.data;
+};

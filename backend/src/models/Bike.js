@@ -17,6 +17,8 @@ const bikeSchema = new mongoose.Schema({
   isOperational: { type: Boolean, default: true },
   isInService: { type: Boolean, default: false },
   lastTelemetryAt: { type: Date, default: null },
+  currentStationId: { type: Number, default: null },
+  isCharging: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model("Bike", bikeSchema);

@@ -12,7 +12,7 @@ export default function InvoicesCard({ invoice }) {
 
   const startDate = MakeDateString(invoice.createdAt);
 
-  const endDate = "-";
+  let endDate = "-";
   if (invoice.paidAt) {
     endDate = MakeDateString(invoice.paidAt);
   }

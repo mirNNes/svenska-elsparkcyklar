@@ -24,4 +24,6 @@ router.patch("/:id/telemetry", requireAuth, requireRole("admin"), bikeController
 router.post("/:id/disable", requireAuth, requireRole("admin"), bikeController.disableBike);
 router.post("/:id/enable", requireAuth, requireRole("admin"), bikeController.enableBike);
 
+router.patch("/:bikeId/move-to-station/:stationId", requireAuth, requireRole("admin"), bikeController.moveBikeToStation);
+
 module.exports = router;

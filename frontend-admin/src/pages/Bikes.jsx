@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { getAllBikes } from "../api/bikes";
 import { getAllCities } from "../api/cities";
 import BikeList from "../components/BikeList";
+import { useNavigate } from "react-router-dom";
 
 const LOW_BATTERY_THRESHOLD = 30;
 
@@ -11,6 +12,7 @@ export default function Bikes() {
   const [cityName, setCityName] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const cityId = searchParams.get("city");
@@ -95,7 +97,9 @@ export default function Bikes() {
     setSearchParams(params);
   }
 
-  if (loading) return <div>Laddar cyklar...</div>;
+  if (loading && bikes.length === 0) {
+    return <div>Laddar cyklar...</div>;
+  }
   if (error) return <div style={{ color: "red" }}>{error}</div>;
 
   return (
@@ -117,7 +121,7 @@ export default function Bikes() {
         <button
           onClick={() => {
             const params = new URLSearchParams(searchParams);
-            window.location.href = `/?${params.toString()}`;
+            navigate(`/?${params.toString()}`);
           }}
         >
           Visa på karta

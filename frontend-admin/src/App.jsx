@@ -8,12 +8,7 @@ import Cities from "./pages/Cities";
 import Rides from "./pages/Rides";
 import Login from "./pages/Login";
 import UserDetails from "./pages/UserDetails";
-
-import {
-  setAccessToken,
-  setRefreshToken,
-} from "./api/http";
-
+import { setAccessToken, setRefreshToken } from "./api/http";
 import "./App.css";
 
 // Skyddar routes så att bara inloggade admins får se dem

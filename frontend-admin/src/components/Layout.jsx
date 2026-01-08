@@ -52,12 +52,27 @@ export default function Layout({ children, onLogout, accessToken, user }) {
       auth: { token: accessToken }
     });
 
-    socketRef.current.on('bike-update', (data) => {
-      setBikeUpdates(prev => ({ ...prev, [data.id]: data }));
+  socketRef.current.on("bike-batch-update", (payload) => {
+    if (!payload || !Array.isArray(payload.bikes)) return;
+
+    setBikeUpdates(prev => {
+      const next = { ...prev };
+
+      for (const bike of payload.bikes) {
+        if (bike?.id == null) continue;
+        next[bike.id] = bike;
+      }
+
+      return next;
     });
+  });
 
     return () => {
-      if (socketRef.current) socketRef.current.disconnect();
+      if (socketRef.current) {
+        socketRef.current.off("bike-batch-update");
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
   }, [accessToken, isLogin]);
 

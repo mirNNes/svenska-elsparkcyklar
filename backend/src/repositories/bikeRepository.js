@@ -58,7 +58,7 @@ async function createSimulationBikes({ cityId, count, center }) {
 }
 
 async function bulkUpdateSimulationBikes(bikes) {
-  if (!bikes.length) return;
+  if (!Array.isArray(bikes) || bikes.length === 0) return;
 
   const ops = bikes.map((bike) => ({
     updateOne: {
@@ -73,7 +73,12 @@ async function bulkUpdateSimulationBikes(bikes) {
     },
   }));
 
-  await Bike.bulkWrite(ops);
+  const CHUNK_SIZE = 300;
+
+  for (let i = 0; i < ops.length; i += CHUNK_SIZE) {
+    const chunk = ops.slice(i, i + CHUNK_SIZE);
+    await Bike.bulkWrite(chunk, { ordered: false });
+  }
 }
 
 // Uppdatera position/batteri för en cykel (t.ex. telemetri).
@@ -140,6 +145,31 @@ async function markBikeAsAvailableByObjectId(objectId) {
   await Bike.findOneAndUpdate({ _id: objectId }, { isAvailable: true });
 }
 
+async function moveBikeToStation(bikeId, location, updates = {}) {
+  const bike = await Bike.findOne({ id: bikeId });
+  if (!bike) return null;
+
+  bike.location = {
+    lat: location.lat,
+    lng: location.lng,
+  };
+
+  if (updates.isAvailable !== undefined) {
+    bike.isAvailable = updates.isAvailable;
+  }
+
+  if (updates.isCharging !== undefined) {
+    bike.isCharging = updates.isCharging;
+  }
+
+  if (updates.currentStationId !== undefined) {
+    bike.currentStationId = updates.currentStationId;
+  }
+
+  await bike.save();
+  return bike;
+}
+
 module.exports = {
   getAllBikes,
   getBikeById,
@@ -156,4 +186,5 @@ module.exports = {
   bulkUpdateSimulationBikes,
   updateBikeTelemetry,
   deleteSimulationBikes,
+  moveBikeToStation,
 };

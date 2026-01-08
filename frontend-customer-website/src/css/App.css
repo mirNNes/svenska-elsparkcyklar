@@ -9,14 +9,14 @@
 
 .logo {
   height: 7em;
-  padding: 1.5em;
+  padding: 30px;
   float: left;
 }
 
 .headertitle {
   float: left;
   width: 70%;
-  margin-top: 0.5em;
+  margin-top: 50px;
 }
 
 /* Nav */
@@ -24,6 +24,11 @@
 .nav {
   padding-bottom: 5px;
   border-bottom: #181616 solid 1px;
+  font-size: 1.3rem;
+}
+
+.nav a:hover {
+  color: #333333bd;
 }
 
 /* Footer */
@@ -49,10 +54,10 @@
 .login_form {
   height: 380px;
   width: 400px;
-  background-color: rgba(211, 198, 198, 0.432);
+  background-color: #fcf2e8;
   position: absolute;
   transform: translate(-50%,-50%);
-  top: 55%;
+  top: 52%;
   left: 70%;
   border-radius: 10px;
   backdrop-filter: blur(10px);
@@ -89,25 +94,31 @@
 
 .login_input{
   display: block;
-  padding-right: 10px;
   height: 50px;
   width: 100%;
-  background-color: rgba(222, 216, 216, 0.541);
+  background-color: #ded4ca;
+  /* background-color: rgba(222, 216, 216, 0.541); */
   border-radius: 3px;
   margin-top: 8px;
   font-size: 14px;
   font-weight: 300;
+  padding-left: 10px;
+  -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+  -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+  box-sizing: border-box;         /* Opera/IE 8+ */
 }
 
 ::placeholder{
-  color: #e5e5e5;
+  color: #333;
 }
 
-.login_btn, .new_account_btn, .create_account_btn {
+.login_btn, 
+.new_account_btn, 
+.create_account_btn {
   margin-top: 50px;
   width: 100%;
-  background-color: #23171086;
-  color: #dcdbe3;
+  background-color: #fcc32e;
+  color: #333;
   padding: 15px 0;
   font-size: 18px;
   font-weight: 600;
@@ -115,15 +126,34 @@
   cursor: pointer;
 }
 
-.new_account_btn{
+.new_account_btn {
+  background-color: #fcaa26;
   display: block;
   margin-top: 10px;
   text-align: center;
 }
 
-/* .new_account_btn a {
-  color: #dcdbe3;
-} */
+.create_account_btn {
+  margin-bottom: 10px;
+}
+
+.logout_btn {
+  background-color: #fcf2e8;
+  float: right;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.login_btn:hover, 
+.new_account_btn:hover, 
+.create_account_btn:hover {
+  border-color: #a8801d;
+}
+
+.logout_btn:hover {
+  border-color: #c9c0b8;
+}
+
 
 /* Create Account page */
 
@@ -134,22 +164,133 @@
 }
 
 .create_account_input {
-  padding-right: 10px;
   display: block;
   height: 50px;
   width: 100%;
-  background-color: rgba(222, 216, 216, 0.541);
+  background-color: #fcf2e8;
   border-radius: 3px;
   margin-top: 8px;
   font-size: 14px;
   font-weight: 300;
+  padding-left: 10px;
+  -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+  -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+  box-sizing: border-box;         /* Opera/IE 8+ */
 }
 
 /* Kort */
-.card {
-  background: #ffffff;
+.card,
+.link_card {
+  background-color: #fcf2e8;
   border-radius: 1rem;
   padding: 1rem 1.25rem;
   margin-bottom: 1rem;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.link_card {
+  width: 40%;
+}
+
+.link_card::after {
+  content: "➜";
+  opacity: 0;
+  margin-left: 10px;
+  transition: 0.5s;
+}
+
+.link_card:hover {
+  background-color: #c5baaf;
+}
+
+.link_card:hover:after {
+  opacity: 1;
+  margin-left: 20px;
+}
+
+.home_links {
+  display: flex;
+  justify-content: space-evenly;
+  flex-direction: column;
+}
+
+/* Table */
+
+.account_table {
+  border-collapse: collapse;
+  overflow: hidden;
+  border: solid 0.5px #333;
+  border-radius: 10px;
+  background-color: #fcf2e8;
+  font-size: 1.1rem;
+}
+
+.account_table tr {
+  border-bottom: solid 0.5px #333;
+}
+
+.account_table th {
+  padding: 30px;
+  text-align: left;
+}
+
+.account_table td {
+  padding: 30px;
+  font-weight: 450;
+}
+
+.inactive {
+  padding: 10px;
+  border-right: 1px solid #787878;
+}
+
+.active {
+  padding: 10px;
+  border-right: 1px solid #787878;
+  background-image: linear-gradient(to bottom, #9db3a3, #fcf2e866 50%);
+}
+
+@media (max-width: 1086px) {
+  .login_form {
+    height: 380px;
+    width: 85%;
+    margin: 2.5%;
+    margin-bottom: 4em;
+    position: relative;
+    transform: none;
+    top: 0;
+    left: 0;
+  }
+
+  .welcome_text {
+    width: 100%;
+  }
+
+  .logo {
+    height: 5.5em;
+    margin-top: 1em;
+  }
+
+  .headertitle {
+    font-size: 3em;
+    margin-top: 35px;
+
+  }
+}
+
+@media (max-width: 612px) {
+  .welcome_text {
+    width: 100%;
+  }
+
+  .logo {
+    padding-top: 0.5em;
+    height: 4em;
+    margin-top: 1em;
+  }
+
+  .headertitle {
+    font-size: 2em;
+    margin-top: 10px;
+  }
 }

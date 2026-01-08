@@ -4,7 +4,6 @@ import './css/App.css'
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Account from './pages/account.jsx'
 import CreateAccount from "./pages/create_account"
-import EditAccount from './pages/edit_account.jsx'
 import Home from './pages/home.jsx'
 import Invoices from './pages/invoices.jsx'
 import Login from "./pages/Login";
@@ -121,14 +120,6 @@ export default function App() {
               element={
                 <PrivateRoute token={token} loading={authLoading}>
                   <Account />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/edit-account"
-              element={
-                <PrivateRoute token={token} loading={authLoading}>
-                  <EditAccount />
                 </PrivateRoute>
               }
             />

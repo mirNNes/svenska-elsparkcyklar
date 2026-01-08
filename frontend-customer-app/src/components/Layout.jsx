@@ -1,21 +1,18 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { io } from 'socket.io-client';
 import logo from '../assets/logo.png'
+import scooter from '../assets/scooter.png'
+import list from '../assets/list.png'
 
 export default function Layout({ children, onLogout, accessToken, user }) {
   const location = useLocation();
-  // const navigate = useNavigate();
-  // true om man står på /login-sidan
   const isLogin = location.pathname === "/login";
   const showLogout = isLogin || location.pathname === "/create_account";
 
   const [bikeUpdates, setBikeUpdates] = useState({});
   const socketRef = useRef(null);
 
-  // const isActive = (path) => location.pathname === path;
-  // const currentIndex = menu.findIndex((item) => item.path === location.pathname);
-  // const tabValue = currentIndex === -1 ? 0 : currentIndex;
 
   useEffect(() => {
     // Koppla inte upp socket förrän man är inloggade
@@ -69,16 +66,16 @@ export default function Layout({ children, onLogout, accessToken, user }) {
         </div>
       </div>
         <div className='router-outlet'>
-          <div className='flex-fix'>
+          {/* <div className='flex-fix'> */}
             
             {React.Children.map(children, child => 
               React.cloneElement(child, { bikeUpdates })
             )}
-          </div>
+          {/* </div> */}
         </div>
         <nav className='bottom-nav'>
-          <Link to="/">Hyra cykel</Link> |{" "}
-          <Link to="/rides">Reshistorik</Link>
+          <NavLink to="/" className={({ isActive }) => (isActive ? 'active' : 'inactive')}><div class="nav_route"><img class="nav_img" src={scooter}/><p class="nav_text">Hyr cykel</p></div></NavLink>
+          <NavLink to="/rides" className={({ isActive }) => (isActive ? 'active' : 'inactive')}><div class="nav_route"><img class="nav_img" src={list}/><p class="nav_text">Reshistorik</p></div></NavLink>
         </nav>
     </div>
   );

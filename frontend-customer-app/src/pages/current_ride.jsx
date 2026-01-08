@@ -28,11 +28,24 @@ export default function CurrentRide() {
     setStratTimeString(timeString);
   }
 
+  function calcTime(startTime) {
+    let diff = Math.abs(new Date() - new Date(startTime));
+    let minutes = Math.floor((diff/1000)/60);
+
+    return minutes;
+  }
+
+  function calcPrice(startTime) {
+    let minutes = calcTime(startTime);
+    let price = (minutes * 2) + 10;
+
+    return price;
+  }
+
   function calcLatLng(startTime, startLat, startLng) {
     let rndLat = Math.floor(Math.random() * 2) + 1;
     let rndLng = Math.floor(Math.random() * 2) + 1;
-    let diff = Math.abs(new Date() - new Date(startTime));
-    let minutes = Math.floor((diff/1000)/60);
+    let minutes = calcTime(startTime);
 
     let endingLat = startLat + (minutes * 0.0001);
     let endingLng = startLng + (minutes * 0.0001); 
@@ -57,6 +70,7 @@ export default function CurrentRide() {
         const res = await getActiveRide();
         if (!cancelled) {
           setRide(res || []);
+          console.log(res);
           calcLatLng(res.ride.startedAt, res.ride.startLocation.lat, res.ride.startLocation.lng);
           makeDateString(res.ride.startedAt);
         } 
@@ -98,11 +112,21 @@ export default function CurrentRide() {
   if (activeError) return <div style={{ color: "red" }}>{activeError}</div>;
 
   return (
-    <div className="margin-div">
-      <h1>Aktiv resa</h1>
-      <p>Resan startad:{startTimeString}</p>
+    <div class="margin-div">
+      <div class="main-title">
+        <h1>Aktiv resa</h1>
+      </div>
+      <div class="card">
+        <p>Resan startad:</p>
+        <p>{startTimeString}</p>
+        <p>Nuvarande tid:</p>
+        <p>{calcTime(ride.ride.startedAt)} minuter</p>
+        <p>Nuvarande kostnad:</p>
+        <p>{calcPrice(ride.ride.startedAt)} kr</p>
+      </div>
+     
       
-      <button className="green-button" onClick={returnBikeBtn} disabled={returnLoading}>
+      <button className="rent-button" onClick={returnBikeBtn} disabled={returnLoading}>
         {returnLoading ? "Återlämnar..." : "Återlämna sparkcykel"}
       </button>
       {returnError && <p className="login-error">{returnError}</p>}

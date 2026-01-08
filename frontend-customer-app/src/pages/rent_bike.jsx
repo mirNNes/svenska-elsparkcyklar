@@ -29,10 +29,12 @@ export default function RentBike() {
   }
 
   return (
-    <div className="margin-div">
-      <h1>Vill du hyra sparkcykel med id {bikeID}?</h1>
+    <div class="margin-div">
+      <div class="main-title">
+        <h1>Vill du hyra sparkcykel med id {bikeID}?</h1>
+      </div>
       <p>Pris: 10 kr startavgift + 2kr i minuten + eventuell parkeringsavgift</p>
-      <button onClick={rentBikeBtn} disabled={loading} className="green-button">
+      <button onClick={rentBikeBtn} disabled={loading} className="rent-button">
         {loading ? "Hyr cykel..." : "Börja hyra"}
       </button>
       {error && <p className="login-error">{error}</p>}

@@ -17,9 +17,11 @@ export default function RidesCard({ ride }) {
   
   return (
     <div className="card">
-      <h3>Ride #{ride.id}</h3>
+      <h3>Resa #{ride.id}</h3>
       <p>Starttid: {startDate}</p>
       <p>Sluttid: {endDate}</p>
+      <p>Distans: {ride.distance} meter</p>
+      <p>Pris: {ride.price} kr</p>
     </div>
   );
 }

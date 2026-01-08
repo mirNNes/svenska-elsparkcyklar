@@ -1,21 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { io } from 'socket.io-client';
 import logo from '../assets/logo.png'
 
 export default function Layout({ children, onLogout, accessToken }) {
   const location = useLocation();
-  // const navigate = useNavigate();
-  // true om man står på /login-sidan
   const isLogin = location.pathname === "/login";
   const showLogout = isLogin || location.pathname === "/create_account";
 
   const [bikeUpdates, setBikeUpdates] = useState({});
   const socketRef = useRef(null);
-
-  // const isActive = (path) => location.pathname === path;
-  // const currentIndex = menu.findIndex((item) => item.path === location.pathname);
-  // const tabValue = currentIndex === -1 ? 0 : currentIndex;
 
   useEffect(() => {
     // Koppla inte upp socket förrän man är inloggade
@@ -72,11 +66,11 @@ export default function Layout({ children, onLogout, accessToken }) {
       
       {/* Navigation */}
       <nav className='nav'>
-        <Link to="/">Hem</Link> |{" "}
-        <Link to="/account">Konto</Link> |{" "}
-        <Link to="/rides">Reshistorik</Link> |{" "}
-        <Link to="/invoices">Fakturor</Link> |{" "}
-        <button onClick={onLogout}>Logga ut</button>
+        <NavLink to="/" className={({ isActive }) => (isActive ? 'active' : 'inactive')}>Hem</NavLink>
+        <NavLink to="/account" className={({ isActive }) => (isActive ? 'active' : 'inactive')}>Konto</NavLink>
+        <NavLink to="/rides" className={({ isActive }) => (isActive ? 'active' : 'inactive')}>Reshistorik</NavLink>
+        <NavLink to="/invoices" className={({ isActive }) => (isActive ? 'active' : 'inactive')}>Fakturor</NavLink>
+        <button className="logout_btn" onClick={onLogout}>Logga ut</button>
       </nav>
       <div className='main'>
         {React.Children.map(children, child => 
@@ -90,3 +84,10 @@ export default function Layout({ children, onLogout, accessToken }) {
     </div>
   );
 }
+
+
+{/* <Link className={({ isActive }) => (isActive ? 'active' : 'inactive')} selected={isActive("/")} to="/">Hem</Link> |{" "}
+        <Link selected={isActive("/account")} to="/account">Konto</Link> |{" "}
+        <Link selected={isActive("/rides")} to="/rides">Reshistorik</Link> |{" "}
+        <Link selected={isActive("/invoices")} to="/invoices">Fakturor</Link> |{" "}
+         */}

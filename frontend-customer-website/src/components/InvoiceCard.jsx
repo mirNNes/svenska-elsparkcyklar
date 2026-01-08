@@ -11,13 +11,17 @@ export default function InvoicesCard({ invoice }) {
   }
 
   const startDate = MakeDateString(invoice.createdAt);
-  const endDate = MakeDateString(invoice.paidAt);
+
+  let endDate = "-";
+  if (invoice.paidAt) {
+    endDate = MakeDateString(invoice.paidAt);
+  }
 
   return (
     <div className="card">
       <h3>Faktura #{invoice.id}</h3>
-      <p>Pris: {invoice.amount}kr</p>
-      <p>Status: {invoice.status}</p>
+      <p>Pris: {invoice.amount} kr</p>
+      <p>Status: {invoice.status == "unpaid" ? "Obetald" : "Betald"}</p>
       <p>Skapad: {startDate}</p>
       <p>Betalad: {endDate}</p>
     </div>

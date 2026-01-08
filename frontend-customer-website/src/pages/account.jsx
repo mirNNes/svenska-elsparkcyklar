@@ -35,20 +35,24 @@ export default function Account() {
   return (
     <div>
       <h2>Konto detaljer</h2>
-      <ul>
-        <li>
-          Namn: {user.name}
-        </li>
-        <li>
-          Email: {user.email}
-        </li>
-        <li>
-          Användarnamn: {user.username}
-        </li>
-        <li>
-          Saldo: {user.balance}
-        </li>
-      </ul>
+      <table class="account_table">
+        <tr>
+          <th>Namn:</th>
+          <td>{user.name}</td>          
+        </tr>
+        <tr>
+          <th>Email:</th>
+          <td>{user.email}</td>
+        </tr>
+        <tr>
+          <th>Användarnamn:</th>
+          <td>{user.username}</td>
+        </tr>
+        <tr>
+          <th>Saldo:</th>
+          <td>{user.balance} kr</td>
+        </tr>
+      </table>
     </div>
   );
 }

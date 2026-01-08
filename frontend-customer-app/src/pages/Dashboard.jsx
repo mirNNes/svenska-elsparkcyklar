@@ -22,10 +22,8 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
       <div class="map_view">
         <MapView key={mapKey} />
       </div>
-    </div>
   );
 }

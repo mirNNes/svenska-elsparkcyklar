@@ -35,9 +35,10 @@ export default function Rides() {
 
   return (
     <div className="margin-div">
-      <div>
+      <div class="main-title">
         <h1>Resor</h1>
       </div>
+      {/* <br /> */}
       {rides.length === 0 ? (
         <p>Inga resor hittades ännu.</p>
       ) : (

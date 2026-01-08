@@ -16,6 +16,8 @@ export default function RidesCard({ ride }) {
     <div className="card">
       <h3>Resa #{ride.id}</h3>
       <p>Datum: {startDate}</p>
+      <p>Pris: {ride.price} kr</p>
+      <p>Distans: {ride.distance} meter</p>
     </div>
   );
 }

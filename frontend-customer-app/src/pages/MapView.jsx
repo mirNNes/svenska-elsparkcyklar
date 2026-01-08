@@ -60,13 +60,10 @@ export default function MapView() {
 
   return (
     <div style={{ height: "85%", width: "100%" }}>
-      <div class="map-title">
-        <h1>Hyr en elsparkcykel</h1>
-      </div>
       <MapContainer
         center={defaultCenter}
         zoom={5}
-        style={{ height: "70vh", width: "100%" }}
+        style={{ height: "78vh", width: "100%" }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

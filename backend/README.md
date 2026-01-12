@@ -20,3 +20,10 @@ Servern körs på **port 5000**.
 
 * `src/app.js` - Huvudapplikation
 * `tests/` - Testfiler
+
+## Tester
+Kör tester:
+PORT=3001 npm test
+
+Kör tester med coverage:
+PORT=3001 npm run test:coverage

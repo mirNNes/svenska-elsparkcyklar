@@ -29,12 +29,13 @@ function waitForHealthy(url, timeoutMs = 15000) {
 describe("Backend integration (no backend code changes)", () => {
   let proc;
   let baseUrl;
-  const PORT = 5105; // välj en port som är “fri” hos er; kan ändras vid behov
+  const PORT = Number(process.env.PORT || 5105);
+
 
   beforeAll(async () => {
     baseUrl = `http://localhost:${PORT}`;
 
-    proc = spawn("node", ["src/app.js"], {
+    proc = spawn("node", ["src/server.js"], {
       cwd: process.cwd(), // backend/
       env: {
         ...process.env,

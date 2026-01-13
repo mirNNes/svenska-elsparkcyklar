@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const [mapKey] = useState(0);
+  const navigate = useNavigate();
   
   useEffect(() => {
     (async () => {
@@ -12,7 +13,6 @@ export default function Dashboard() {
         const res = await getActiveRide();
         console.log(res);
         if (res.ride != null) {
-          const navigate = useNavigate();
           navigate("/current_ride", { replace: true });
         }
       } catch (err) {

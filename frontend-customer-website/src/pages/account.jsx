@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { getUser } from "../api/user";
-import { getAllCities } from "../api/cities";
 
 export default function Account() {
   const [user, setUser] = useState([]);
-  const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 

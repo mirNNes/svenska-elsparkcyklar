@@ -68,7 +68,7 @@ export default function CurrentRide() {
     setReturnError(null);
 
     try {
-      const response = await returnBike(ride.ride.id, endLat, endLng);
+      await returnBike(ride.ride.id, endLat, endLng);
       navigate("/rides", { replace: true });
     } catch (err) {
       console.log(err);

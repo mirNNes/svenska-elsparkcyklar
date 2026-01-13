@@ -506,6 +506,9 @@ export default function MapView({
                         <div>Hastighet: {formatSpeed(bike.speed)}</div>
                         <div>Läge: {getBikeModeLabel(bike)}</div>
                         <div>Resa: {getRideStatusText(bike, activeRide)}</div>
+                        {activeRide?.userLabel && (
+                          <div>Användare: {activeRide.userLabel}</div>
+                        )}
 
                         {activeRide?.startedAt && (
                           <div>

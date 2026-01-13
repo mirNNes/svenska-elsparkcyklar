@@ -12,6 +12,8 @@ const userSchema = new mongoose.Schema({
 
   // Roller för att skilja på om det är anvädnare eller admin
   role: { type: String, enum: ["user", "admin"], default: "user" },
+  // Flagga för simulerade användare som bara behövs för test/visualisering
+  isSimulation: { type: Boolean, default: false },
   // Användarens saldo (prepaid)
   balance: { type: Number, default: 100 },
   // Anändarens statistik

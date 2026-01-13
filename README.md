@@ -32,3 +32,14 @@ Kör lokalt:
 cd backend
 npm test
 npm run test:coverage
+```
+
+### Kodkvalitet och CI-verifiering
+
+Projektet använder automatiserad kodkvalitetskontroll som en del av CI-flödet.
+
+- **ESLint** används för statisk analys av koden för att validera kodstandard och identifiera potentiella problem (“mess detection”).
+- Kodkvalitetskontroller körs automatiskt via **GitHub Actions** vid varje push och pull request.
+- Bygget misslyckas om tester eller kodstandard inte uppfylls.
+
+Detta säkerställer att både funktionalitet och kodkvalitet verifieras automatiskt.

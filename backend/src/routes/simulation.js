@@ -198,20 +198,8 @@ router.post("/start", requireAuth, requireRole("admin"), async (req, res) => {
       await bikeRepository.bulkUpdateSimulationBikes(updatedBikes);
 
       if (io) {
-        updatedBikes.forEach((bike) => {
-          io.emit("bike-update", {
-            id: bike.id,
-            cityId: bike.cityId,
-            location: bike.location,
-            battery: bike.battery,
-            isAvailable: bike.isAvailable,
-            speed: bike.speed,
-            isOperational: bike.isOperational,
-            isInService: bike.isInService,
-            lastTelemetryAt: bike.lastTelemetryAt,
-            updatedAt: bike.updatedAt,
-          });
-        });
+        // Skicka batch uppdatering per tick så admin-klienten kan uppdatera allt på en gång.
+        io.emit("bike-batch-update", { bikes: updatedBikes });
       }
 
       simulation.bikes = updatedBikes;

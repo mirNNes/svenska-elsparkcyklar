@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useContext } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -6,9 +6,18 @@ import { getAllBikes } from "../api/bikes";
 import { getAllCities } from "../api/cities";
 import { getActiveRideForBike } from "../api/rides";
 import { getAllStations } from "../api/stations";
-import { FitBounds, FlyToBike, BikePopupOpener } from "../components/map/MapControls";
+import { BikeUpdatesContext } from "../components/Layout";
+import {
+  FitBounds,
+  FlyToBike,
+  BikePopupOpener,
+} from "../components/map/MapControls";
 import BikeSideList from "../components/map/BikeSideList";
-import { createBikeIcon, createSelectedBikeIcon, createStationIcon } from "../components/map/MapIcons";
+import {
+  createBikeIcon,
+  createSelectedBikeIcon,
+  createStationIcon,
+} from "../components/map/MapIcons";
 import {
   formatSpeed,
   formatTelemetryTime,
@@ -19,7 +28,13 @@ import {
   LOW_BATTERY_THRESHOLD,
 } from "../utils/mapUtils";
 
-export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) {
+export default function MapView({
+  simulationRunning,
+  refreshKey,
+  bikeUpdates,
+}) {
+  const bikeUpdatesFromContext = useContext(BikeUpdatesContext);
+  const liveBikeUpdates = bikeUpdates ?? bikeUpdatesFromContext;
   const [bikes, setBikes] = useState([]);
   const [cities, setCities] = useState([]);
   const [activeRides, setActiveRides] = useState({});
@@ -55,16 +70,9 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
     [isMobile]
   );
 
-  const stationIcon = useMemo(
-    () => createStationIcon(isMobile),
-    [isMobile]
-  );
+  const stationIcon = useMemo(() => createStationIcon(isMobile), [isMobile]);
 
-  const bikeIcon = useMemo(
-    () => createBikeIcon(isMobile),
-    [isMobile]
-  );
-
+  const bikeIcon = useMemo(() => createBikeIcon(isMobile), [isMobile]);
 
   // Återställ pauseFitBounds när ingen cykel är vald
   useEffect(() => {
@@ -150,12 +158,15 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
   }, [refreshKey]);
 
   useEffect(() => {
-    if (!bikeUpdates) return;
+    if (!liveBikeUpdates || Object.keys(liveBikeUpdates).length === 0) return;
 
-    setBikes(prev =>
-      prev.map(b => bikeUpdates[b.id] ? { ...b, ...bikeUpdates[b.id] } : b)
+    // Uppdaterar bara de cyklar som faktiskt fått nya värden från socketen
+    setBikes((prev) =>
+      prev.map((b) =>
+        liveBikeUpdates[b.id] ? { ...b, ...liveBikeUpdates[b.id] } : b
+      )
     );
-  }, [bikeUpdates]);
+  }, [liveBikeUpdates]);
 
   // Default center för kartan
   const defaultCenter = useMemo(() => {
@@ -290,7 +301,9 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
         >
           Karta
           {cityId && (
-            <span style={{ opacity: 0.6, fontSize: "clamp(1rem, 3vw, 1.6rem)" }}>
+            <span
+              style={{ opacity: 0.6, fontSize: "clamp(1rem, 3vw, 1.6rem)" }}
+            >
               {" "}
               – filtrerad
             </span>
@@ -434,8 +447,8 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
                 boundsKey={boundsKey}
                 isBikeSelected={isBikeSelected || simulationRunning}
               />
-              <FlyToBike 
-                bike={shouldFlyToBike ? selectedBike : null} 
+              <FlyToBike
+                bike={shouldFlyToBike ? selectedBike : null}
                 setPauseFitBounds={setPauseFitBounds}
                 onComplete={() => setShouldFlyToBike(false)}
               />
@@ -483,8 +496,9 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
                           <div style={{ color: "green" }}>
                             🔌 Laddstation:{" "}
                             {
-                              stations.find((s) => s.id === bike.currentStationId)
-                                ?.name
+                              stations.find(
+                                (s) => s.id === bike.currentStationId
+                              )?.name
                             }
                           </div>
                         )}
@@ -494,7 +508,9 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
                         <div>Resa: {getRideStatusText(bike, activeRide)}</div>
 
                         {activeRide?.startedAt && (
-                          <div>Start: {formatTelemetryTime(activeRide.startedAt)}</div>
+                          <div>
+                            Start: {formatTelemetryTime(activeRide.startedAt)}
+                          </div>
                         )}
                       </div>
                     </Popup>
@@ -545,20 +561,20 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
           background: none !important;
           border: none !important;
         }
-        
+
         .station-icon {
           background: none !important;
           border: none !important;
         }
-        
+
         .mobile-close-btn {
           display: none;
         }
-        
+
         .mobile-toggle-btn {
           display: none;
         }
-        
+
         @media (max-width: 768px) {
           .bike-list {
             position: fixed;
@@ -577,31 +593,31 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
           .bike-list.mobile-open {
             transform: translateX(0);
           }
-          
+
           .mobile-close-btn {
             display: block !important;
           }
-          
+
           .mobile-toggle-btn {
             display: flex !important;
             align-items: center;
             justify-content: center;
           }
-          
+
           .main-content {
             flex-direction: column;
           }
-          
+
           .controls-section {
             flex-direction: column;
             align-items: stretch;
             gap: 0.75rem;
           }
-          
+
           .controls-section > div:first-child {
             display: none;
           }
-          
+
           .stats-section {
             margin-left: 0;
             margin-top: 0;
@@ -609,7 +625,7 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
             gap: 0.75rem;
             justify-content: space-between;
           }
-          
+
           .label-text {
             font-size: 0.9rem;
           }
@@ -626,7 +642,7 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
             margin-top: 0.5rem;
           }
         }
-        
+
         @media (max-width: 480px) {
           .stats-section span {
             font-size: 0.75rem;

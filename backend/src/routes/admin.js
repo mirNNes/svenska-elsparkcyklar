@@ -23,6 +23,8 @@ router.post("/reset-seed", requireAuth, requireRole("admin"), async (req, res) =
     await Station.deleteMany({});
     await ParkingZone.deleteMany({});
     await AllowedZone.deleteMany({});
+    // Ta bort sim-användare så återställning ger en ren start.
+    await User.deleteMany({ isSimulation: true });
     await User.updateMany({}, { $set: { balance: 100 } });
     await seedData();
     res.json({ message: "Seed-data återställd" });

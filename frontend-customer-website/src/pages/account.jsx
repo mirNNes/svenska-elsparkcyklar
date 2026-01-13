@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { getUSer } from "../api/user"
-import InvoicesList from "../components/InvoicesList";
+import { getUser } from "../api/user";
+import { getAllCities } from "../api/cities";
 
 export default function Account() {
   const [user, setUser] = useState([]);
+  const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -12,7 +13,7 @@ export default function Account() {
 
     (async () => {
       try {
-        const res = await getUSer();
+        const res = await getUser();
         if (!cancelled) setUser(res || []);
       } catch (err) {
         if (!cancelled) {

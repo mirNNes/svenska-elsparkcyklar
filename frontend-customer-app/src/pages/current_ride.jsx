@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { returnBike, getActiveRide } from "../api/bikes";
+import { returnBike, getActiveRide, getAllBikes } from "../api/bikes";
+import { getAllCities } from "../api/cities";
+import { makeDateString, calcTime, calcPrice, calcLatLng } from "../functions/rent-functions";
 
 
 export default function CurrentRide() {
@@ -15,64 +17,35 @@ export default function CurrentRide() {
 
   const navigate = useNavigate();
 
-  function makeDateString(date){
-    const newDate = new Date(date);
-    const day = newDate.getDate();
-    const month = newDate.getMonth();
-    const year = newDate.getFullYear();
-    const hour = newDate.getHours();
-    const minute = newDate.getMinutes();
-
-    const timeString = `${day}/${month+1}/${year} ${hour}:${minute}`;
-
-    setStratTimeString(timeString);
-  }
-
-  function calcTime(startTime) {
-    let diff = Math.abs(new Date() - new Date(startTime));
-    let minutes = Math.floor((diff/1000)/60);
-
-    return minutes;
-  }
-
-  function calcPrice(startTime) {
-    let minutes = calcTime(startTime);
-    let price = (minutes * 2) + 10;
-
-    return price;
-  }
-
-  function calcLatLng(startTime, startLat, startLng) {
-    let rndLat = Math.floor(Math.random() * 2) + 1;
-    let rndLng = Math.floor(Math.random() * 2) + 1;
-    let minutes = calcTime(startTime);
-
-    let endingLat = startLat + (minutes * 0.0001);
-    let endingLng = startLng + (minutes * 0.0001); 
-
-    if (rndLat == 1){
-      endingLat = startLat - (minutes * 0.0001);
-    }
-
-    if (rndLng == 1){
-      endingLng = startLng - (minutes * 0.0001); 
-    }
-
-    setEndLat(endingLat);
-    setEndLng(endingLng);
-  }
-
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       try {
-        const res = await getActiveRide();
+        const [bikeRes, cityRes, activeRes] = await Promise.all([
+          getAllBikes(),
+          getAllCities(),
+          getActiveRide(),
+        ]);
+        let center = [];
+        let radius = 0;
         if (!cancelled) {
-          setRide(res || []);
-          console.log(res);
-          calcLatLng(res.ride.startedAt, res.ride.startLocation.lat, res.ride.startLocation.lng);
-          makeDateString(res.ride.startedAt);
+          bikeRes.forEach(bike => {
+            if (bike._id == activeRes.ride.bikeId) {
+              cityRes.forEach(city => {
+                if (city._id == bike.cityId) {
+                  center = city.center;
+                  radius = city.radius;
+                } 
+              });
+            } 
+          });
+
+          setRide(activeRes || []);
+          let endPos = calcLatLng(activeRes.ride.startedAt, activeRes.ride.startLocation.lat, activeRes.ride.startLocation.lng, center, radius);
+          setEndLat(endPos[0]);
+          setEndLng(endPos[1]);
+          setStratTimeString(makeDateString(activeRes.ride.startedAt));
         } 
       } catch (err) {
         if (!cancelled) {
@@ -96,7 +69,6 @@ export default function CurrentRide() {
 
     try {
       const response = await returnBike(ride.ride.id, endLat, endLng);
-      console.log(response);
       navigate("/rides", { replace: true });
     } catch (err) {
       console.log(err);

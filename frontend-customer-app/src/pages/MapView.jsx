@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { getAllBikes } from "../api/bikes";
+import { getAllBikes, getActiveRide } from "../api/bikes";
 import { getAllCities } from "../api/cities";
 import L from "leaflet";
 

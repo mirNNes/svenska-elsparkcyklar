@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Bas-URL till backend-API
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Global variabel där access-token sparas efter inloggning
 let globalAccessToken = null;
@@ -46,9 +46,10 @@ api.interceptors.response.use(
       error.config._retry = true;
 
       try {
-        const res = await axios.post(`${API_URL}/auth/refresh`, {
-          refresh_token: globalRefreshToken
+        const res = await api.post("/auth/refresh", {
+        refresh_token: globalRefreshToken
         });
+
 
         const { access_token, refresh_token } = res.data;
 

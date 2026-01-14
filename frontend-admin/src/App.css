@@ -379,6 +379,36 @@ input[type="checkbox"] {
   border-bottom: 2px solid rgb(215, 215, 215);
 }
 
+.leaflet-popup-content-wrapper {
+  border-radius: 10px;
+}
+
+.leaflet-popup-content {
+  font-size: 0.95rem;
+}
+
+.card select {
+  width: 100%;
+  max-width: 380px;
+
+  padding: 0.6rem 0.75rem;
+  padding-right: 2.2rem;
+
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: #111827;
+
+  cursor: pointer;
+}
+
+.mobile-filters {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .user-details {
     padding: 1.5rem;
@@ -411,6 +441,14 @@ input[type="checkbox"] {
     font-size: 1rem;
     padding: 0.7rem 0.75rem;
   }
+
+  .bike-list {
+    margin-top: 90px;
+  }
+
+  .mobile-filters {
+    display: flex;
+  }
 }
 
 @media (max-width: 480px) {
@@ -441,30 +479,4 @@ input[type="checkbox"] {
   .users-search-input {
     width: auto;
   }
-}
-
-.leaflet-popup-content-wrapper {
-  border-radius: 10px;
-}
-
-.leaflet-popup-content {
-  font-size: 0.95rem;
-}
-
-.card select {
-  width: 100%;
-  max-width: 380px;
-
-  padding: 0.6rem 0.75rem;
-  padding-right: 2.2rem;
-
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  background-color: #ffffff;
-
-  font-size: 0.95rem;
-  line-height: 1.4;
-  color: #111827;
-
-  cursor: pointer;
 }

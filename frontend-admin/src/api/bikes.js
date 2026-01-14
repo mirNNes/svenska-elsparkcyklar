@@ -28,9 +28,16 @@ export const returnBike = async (bikeId) => {
   }
 };
 
+// Flytta en cykel to laddstation
 export const moveBikeToStation = async (bikeId, stationId) => {
   const res = await api.patch(
     `/bike/${bikeId}/move-to-station/${stationId}`
   );
   return res.data;
 };
+
+// Ta bort en cykel från laddstation
+export async function removeBikeFromStation(bikeId) {
+  const res = await api.post(`/bike/${bikeId}/remove-from-station`);
+  return res.data;
+}

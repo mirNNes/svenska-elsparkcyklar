@@ -12,12 +12,6 @@ export function formatTelemetryTime(value) {
   return date.toLocaleString("sv-SE");
 }
 
-export function getBikeModeLabel(bike) {
-  if (bike.isOperational === false) return "Avstängd";
-  if (bike.isInService === true) return "Service";
-  return "OK";
-}
-
 export function isBatteryEmpty(bike) {
   const battery = Number(bike?.battery);
   if (!Number.isFinite(battery)) return false;

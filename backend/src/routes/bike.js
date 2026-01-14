@@ -5,6 +5,8 @@ const bikeController = require("../controllers/bikeController");
 
 const router = express.Router();
 
+router.patch("/:bikeId/move-to-station/:stationId", requireAuth, requireRole("admin"), bikeController.moveBikeToStation);
+
 // Hämta alla cyklar eller en specifik
 router.get("/", bikeController.getAllBikes);
 router.get("/:id", bikeController.getBikeById);
@@ -24,6 +26,7 @@ router.patch("/:id/telemetry", requireAuth, requireRole("admin"), bikeController
 router.post("/:id/disable", requireAuth, requireRole("admin"), bikeController.disableBike);
 router.post("/:id/enable", requireAuth, requireRole("admin"), bikeController.enableBike);
 
-router.patch("/:bikeId/move-to-station/:stationId", requireAuth, requireRole("admin"), bikeController.moveBikeToStation);
+// Ta bort cykel från laddstation (admin)
+router.post("/:id/remove-from-station", requireAuth, requireRole("admin"), bikeController.removeBikeFromStation);
 
 module.exports = router;

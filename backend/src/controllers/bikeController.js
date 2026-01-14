@@ -60,6 +60,7 @@ async function startRent(req, res) {
     await bikeRepository.updateBikeTelemetry(bikeId, {
       currentStationId: null,
       isCharging: false,
+      isAvailable: true,
     });
   }
 
@@ -251,6 +252,8 @@ async function moveBikeToStation(req, res) {
       isAvailable: false,
       isCharging: true,
       currentStationId: station.id,
+      parkingStatus: "STATION",
+      parkingZoneId: null,
     }
   );
 
@@ -268,6 +271,36 @@ async function moveBikeToStation(req, res) {
   });
 }
 
+// POST /bike/:id/remove-from-station (admin)
+async function removeBikeFromStation(req, res) {
+  const bikeId = Number(req.params.id);
+
+  if (!Number.isInteger(bikeId) || bikeId <= 0) {
+    return res.status(400).json({ error: "Ogiltigt bikeId" });
+  }
+
+  const bike = await bikeRepository.getBikeById(bikeId);
+  if (!bike) return res.status(404).json({ error: "Bike not found" });
+
+  if (!bike.currentStationId) {
+    return res.status(400).json({ error: "Bike is not in a station" });
+  }
+
+  const stationId = bike.currentStationId;
+
+  await bikeRepository.updateBikeTelemetry(bikeId, {
+    currentStationId: null,
+    isCharging: false,
+    isAvailable: true,
+    parkingStatus: "STATION",
+    parkingZoneId: null,
+  });
+
+  await stationRepository.removeBikeFromStation(stationId);
+
+  res.json({ success: true });
+}
+
 module.exports = {
   getAllBikes,
   getBikeById,
@@ -279,4 +312,5 @@ module.exports = {
   disableBike,
   enableBike,
   moveBikeToStation,
+  removeBikeFromStation,
 };

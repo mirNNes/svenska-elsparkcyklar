@@ -1,6 +1,8 @@
 const rideRepository = require("../repositories/rideRepository");
 const bikeRepository = require("../repositories/bikeRepository");
 const userRepository = require("../repositories/userRepository");
+const stationRepository = require("../repositories/stationRepository");
+const parkingZoneRepository = require("../repositories/parkingZoneRepository");
 
 function getUserLabel(user) {
   if (!user) return null;
@@ -28,7 +30,10 @@ async function startRide(req, res) {
   if (!Number.isInteger(bikeId) || bikeId <= 0) {
     return res.status(400).json({ error: "Ogiltigt bikeId" });
   }
+
   const bike = await bikeRepository.getBikeById(bikeId);
+  if (!bike) return res.status(404).json({ error: "Bike not found" });
+
   let user;
   if (isAdmin) {
     if (!Number.isInteger(userId) || userId <= 0) {
@@ -43,15 +48,36 @@ async function startRide(req, res) {
   }
 
   if (!user) return res.status(404).json({ error: "User not found" });
-  if (!bike) return res.status(404).json({ error: "Bike not found" });
-  if (bike.isOperational === false) return res.status(400).json({ error: "Bike is disabled" });
-  if (bike.isInService === true) return res.status(400).json({ error: "Bike is in service" });
+  if (bike.isOperational === false)
+    return res.status(400).json({ error: "Bike is disabled" });
+  if (bike.isInService === true)
+    return res.status(400).json({ error: "Bike is in service" });
   if (!bike.isAvailable)
     return res.status(400).json({ error: "Bike already rented" });
 
-  const ride = await rideRepository.startRide(bikeId, userId);
+  // Om cykeln står på en laddstation – ta bort den därifrån
+  if (bike.currentStationId) {
+    const stationId = bike.currentStationId;
+
+    await bikeRepository.updateBikeTelemetry(bikeId, {
+      currentStationId: null,
+      isCharging: false,
+      isAvailable: true,
+    });
+
+    // Minska antal cyklar på stationen
+    await stationRepository.removeBikeFromStation(stationId);
+  }
+
+  // Lägre startavgift om cykeln stod på fri parkering
+  const startFeeModifier =
+    bike.parkingStatus === "OUTSIDE_ZONE" ? 0.8 : 1.0;
+
+  const ride = await rideRepository.startRide(bikeId, userId, {
+    startFeeModifier,
+  });
+
   if (ride && ride.error) {
-    // rideRepository svarar med error om bike/user saknas eller redan är i resa
     const status = ride.error === "Bike already in ride" ? 400 : 404;
     return res.status(status).json({ error: ride.error });
   }
@@ -71,22 +97,52 @@ async function endRide(req, res) {
   if (!endLocation) {
     return res.status(400).json({ error: "endLocation krävs" });
   }
+
   const endLat = Number(endLocation?.lat);
   const endLng = Number(endLocation?.lng);
   if (!Number.isFinite(endLat) || !Number.isFinite(endLng)) {
     return res.status(400).json({ error: "Ogiltig endLocation" });
   }
+
   const ride = await rideRepository.getRideById(rideId);
   if (!ride) return res.status(404).json({ error: "Ride not found" });
   if (ride.endedAt)
     return res.status(400).json({ error: "Ride already finished" });
 
-  // Vi kräver slutposition så att parkering/batteri blir korrekt uppdaterat.
+  // Avsluta resa med slutposition
   const endedRide = await rideRepository.endRide(rideId, {
     lat: endLat,
     lng: endLng,
   });
-  // Sätt cykeln som ledig igen, Ride sparar bikeId som Mongo _id
+
+  // Kontrollera parkeringszon
+  let parkingZone = null;
+  try {
+    parkingZone = await parkingZoneRepository.findParkingZoneForLocation(
+      { lat: endLat, lng: endLng },
+      ride.cityId
+    );
+  } catch (err) {
+    console.error("Parking zone check failed", err);
+  }
+
+  if (endedRide?.ride) {
+    let status = parkingZone ? "OK" : "OUTSIDE_ZONE";
+    let zoneId = parkingZone ? parkingZone.id : null;
+
+    endedRide.ride.parkingStatus = status;
+    endedRide.ride.parkingZoneId = zoneId;
+
+    await bikeRepository.updateBikeByObjectId(
+      endedRide.ride.bikeId,
+      {
+        parkingStatus: status,
+        parkingZoneId: zoneId,
+      }
+    );
+  }
+
+  // Markera cykel som ledig igen
   await bikeRepository.markBikeAsAvailableByObjectId(
     endedRide.ride ? endedRide.ride.bikeId : ride.bikeId
   );

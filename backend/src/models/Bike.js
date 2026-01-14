@@ -19,6 +19,17 @@ const bikeSchema = new mongoose.Schema({
   lastTelemetryAt: { type: Date, default: null },
   currentStationId: { type: Number, default: null },
   isCharging: { type: Boolean, default: false },
+  
+  parkingStatus: {
+    type: String,
+    enum: ["OK", "OUTSIDE_ZONE", "STATION"],
+    default: "OUTSIDE_ZONE",
+  },
+
+  parkingZoneId: {
+    type: Number,
+    default: null,
+  },
 });
 
 module.exports = mongoose.model("Bike", bikeSchema);

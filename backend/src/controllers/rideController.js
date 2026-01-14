@@ -4,6 +4,23 @@ const userRepository = require("../repositories/userRepository");
 const stationRepository = require("../repositories/stationRepository");
 const parkingZoneRepository = require("../repositories/parkingZoneRepository");
 
+function getUserLabel(user) {
+  if (!user) return null;
+
+  const username = user.username || "";
+  const simMatch = username.match(/^simuser(\d+)$/);
+  if (simMatch) {
+    return `Sim user ${simMatch[1]}`;
+  }
+
+  return (
+    user.name ||
+    user.username ||
+    user.email ||
+    (Number.isInteger(user.id) ? `User #${user.id}` : null)
+  );
+}
+
 // POST /ride/start - starta en resa
 async function startRide(req, res) {
   const { bikeId, userId: bodyUserId } = req.body || {};
@@ -177,7 +194,16 @@ async function getActiveRideByBike(req, res) {
   if (!bike) return res.status(404).json({ error: "Bike not found" });
 
   const ride = await rideRepository.getActiveRideByBikeObjectId(bike._id);
-  res.json({ ride: ride || null });
+  if (!ride) return res.json({ ride: null });
+
+  const user = await userRepository.getUserByObjectId(ride.userId);
+  const userLabel = getUserLabel(user);
+  const ridePayload = ride.toObject();
+  if (userLabel) {
+    ridePayload.userLabel = userLabel;
+  }
+
+  res.json({ ride: ridePayload });
 }
 
 // GET /ride/user/:userId - resor för specifik användare (admin)

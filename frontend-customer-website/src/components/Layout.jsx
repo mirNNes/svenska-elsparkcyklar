@@ -84,10 +84,3 @@ export default function Layout({ children, onLogout, accessToken }) {
     </div>
   );
 }
-
-
-{/* <Link className={({ isActive }) => (isActive ? 'active' : 'inactive')} selected={isActive("/")} to="/">Hem</Link> |{" "}
-        <Link selected={isActive("/account")} to="/account">Konto</Link> |{" "}
-        <Link selected={isActive("/rides")} to="/rides">Reshistorik</Link> |{" "}
-        <Link selected={isActive("/invoices")} to="/invoices">Fakturor</Link> |{" "}
-         */}

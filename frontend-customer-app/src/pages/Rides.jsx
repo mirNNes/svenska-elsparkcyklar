@@ -42,7 +42,7 @@ export default function Rides() {
       {rides.length === 0 ? (
         <p>Inga resor hittades ännu.</p>
       ) : (
-        <RidesList rides={rides} />
+        <RidesList rides={rides.reverse()} />
       )}
     </div>
   );

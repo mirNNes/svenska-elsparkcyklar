@@ -54,7 +54,6 @@ export default function BikeSideList({
           padding: 12,
           background: "white",
           zIndex: 1000,
-          marginTop: 90,
         }}
       >
         {/* Header */}
@@ -171,6 +170,8 @@ export default function BikeSideList({
         <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
           {list.map((b) => {
             const isSelected = selectedId === b._id;
+            const battery = b.battery ?? 0;
+            const isLow = battery < LOW_BATTERY_THRESHOLD;
 
             return (
               <button
@@ -183,14 +184,25 @@ export default function BikeSideList({
                   textAlign: "left",
                   border: isSelected ? "2px solid #1976d2" : "1px solid #ddd",
                   borderRadius: 8,
-                  padding: 35,
+                  padding: 25,
                   background: isSelected ? "#e3f2fd" : "white",
                   cursor: "pointer",
                 }}
               >
-                <strong style={{ color: "black" }}>
-                  Bike #{b.id}
-                </strong>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <strong style={{ color: "black" }}>
+                    Bike #{b.id}
+                  </strong>
+
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      color: isLow ? "#d32f2f" : "#2e7d32",
+                    }}
+                  >
+                    🔋 {battery}%
+                  </span>
+                </div>
               </button>
             );
           })}

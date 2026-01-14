@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { getAllBikes } from "../api/bikes";
+import { getAllBikes, removeBikeFromStation } from "../api/bikes";
 import { getAllCities } from "../api/cities";
 import { getActiveRideForBike } from "../api/rides";
 import { getAllStations } from "../api/stations";
 import { FitBounds, FlyToBike, BikePopupOpener } from "../components/map/MapControls";
 import BikeSideList from "../components/map/BikeSideList";
 import { createBikeIcon, createSelectedBikeIcon, createStationIcon } from "../components/map/MapIcons";
+import { getAllParkingZones } from "../api/zones";
 import {
   formatSpeed,
   formatTelemetryTime,
-  getBikeModeLabel,
   getAvailabilityText,
   getRideStatusText,
   isBatteryEmpty,
@@ -35,6 +35,7 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
   const boundsKeyRef = useRef(0);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [parkingZones, setParkingZones] = useState([]);
 
   const cityId = searchParams.get("city");
   const availableOnly = searchParams.get("available") === "1";
@@ -150,6 +151,25 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
   }, [refreshKey]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const zones = await getAllParkingZones();
+        if (!cancelled) {
+          setParkingZones(Array.isArray(zones) ? zones : []);
+        }
+      } catch (err) {
+        console.error("Failed to load parking zones", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!bikeUpdates) return;
 
     setBikes(prev =>
@@ -175,6 +195,14 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
       return true;
     });
   }, [bikes, cityId, availableOnly, lowBatteryOnly]);
+
+  const visibleParkingZones = useMemo(() => {
+    if (!cityId) return parkingZones;
+    return parkingZones.filter(
+      (z) => String(z.cityId) === String(cityId)
+    );
+  }, [parkingZones, cityId]);
+
 
   // Statistik
   const stats = useMemo(() => {
@@ -217,6 +245,21 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
   const selectedBike = useMemo(() => {
     return filteredBikes.find((b) => b._id === selectedBikeId) || null;
   }, [filteredBikes, selectedBikeId]);
+
+  const bikesByParkingZone = useMemo(() => {
+    const map = {};
+    for (const zone of parkingZones) {
+      map[zone.id] = [];
+    }
+
+    for (const bike of bikes) {
+      if (bike.parkingZoneId && map[bike.parkingZoneId]) {
+        map[bike.parkingZoneId].push(bike);
+      }
+    }
+
+    return map;
+  }, [bikes, parkingZones]);
 
   const selectedBikeKey = selectedBike ? String(selectedBike.id) : null;
 
@@ -480,18 +523,59 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
                         <div>Batteri: {bike.battery ?? 0}%</div>
 
                         {bike.currentStationId && (
-                          <div style={{ color: "green" }}>
-                            🔌 Laddstation:{" "}
-                            {
-                              stations.find((s) => s.id === bike.currentStationId)
-                                ?.name
-                            }
+                          <div style={{ marginTop: 6 }}>
+                            <div style={{ color: "green" }}>
+                              🔌 Laddstation:{" "}
+                              {stations.find((s) => s.id === bike.currentStationId)?.name}
+                            </div>
+
+                            <button
+                              style={{
+                                marginTop: 6,
+                                padding: "4px 8px",
+                                fontSize: "0.8rem",
+                                background: "#d32f2f",
+                                color: "white",
+                                border: "none",
+                                borderRadius: 4,
+                                cursor: "pointer",
+                              }}
+                              onClick={async () => {
+                                if (!window.confirm("Ta bort cykel från laddstation?")) return;
+
+                                try {
+                                  await removeBikeFromStation(bike.id);
+
+                                  setBikes(prev =>
+                                    prev.map(b =>
+                                      b.id === bike.id
+                                        ? {
+                                            ...b,
+                                            currentStationId: null,
+                                            isCharging: false,
+                                            isAvailable: true,
+                                          }
+                                        : b
+                                    )
+                                  );
+                                } catch (err) {
+                                  alert(err.message || "Misslyckades");
+                                }
+                              }}
+                            >
+                              Ta bort från laddstation
+                            </button>
                           </div>
                         )}
 
                         <div>Hastighet: {formatSpeed(bike.speed)}</div>
-                        <div>Läge: {getBikeModeLabel(bike)}</div>
-                        <div>Resa: {getRideStatusText(bike, activeRide)}</div>
+                        {!bike.isCharging && (
+                          <div>Resa: {getRideStatusText(bike, activeRide)}</div>
+                        )}
+
+                        {bike.isCharging && (
+                          <div style={{ color: "green" }}>🔋 Laddas (ingen resa)</div>
+                        )}
 
                         {activeRide?.startedAt && (
                           <div>Start: {formatTelemetryTime(activeRide.startedAt)}</div>
@@ -501,6 +585,39 @@ export default function MapView({ simulationRunning, refreshKey, bikeUpdates }) 
                   </Marker>
                 );
               })}
+
+              {/* Parkeringszoner */}
+              {visibleParkingZones.map((zone) => (
+                <Circle
+                  key={`parking-zone-${zone.id}`}
+                  center={[zone.center.lat, zone.center.lng]}
+                  radius={zone.radius}
+                  pathOptions={{
+                    color: "#2e7d32",
+                    fillColor: "#66bb6a",
+                    fillOpacity: 0.25,
+                    weight: 2,
+                    dashArray: "4",
+                    pane: "overlayPane",
+                  }}
+                >
+                  <Popup>
+                    <strong>{zone.name}</strong>
+                    <br />
+                    Accepterad parkeringszon
+                    <br />
+                    Radie: {zone.radius} m
+                    <br />
+                    <br />
+                    Cyklar här: {bikesByParkingZone[zone.id]?.length ?? 0}
+                    <ul style={{ paddingLeft: 16 }}>
+                      {bikesByParkingZone[zone.id]?.map((b) => (
+                        <li key={b.id}>Bike #{b.id}</li>
+                      ))}
+                    </ul>
+                  </Popup>
+                </Circle>
+              ))}
 
               {/* Stationsmarkörer */}
               {stations

@@ -1,4 +1,3 @@
-// Repository för accepterade parkeringszoner: CRUD mot MongoDB.
 const ParkingZone = require("../models/ParkingZone");
 
 async function getAllParkingZones() {
@@ -47,6 +46,38 @@ async function deleteParkingZone(id) {
   return result.deletedCount > 0;
 }
 
+// Kontrollera om en position är inom en accepterad parkeringszon
+function distanceMeters(a, b) {
+  const R = 6371000;
+  const toRad = (v) => (v * Math.PI) / 180;
+
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+
+  return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+}
+
+async function findParkingZoneForLocation({ lat, lng }, cityId) {
+  const zones = await ParkingZone.find({ cityId });
+
+  return (
+    zones.find((zone) => {
+      const d = distanceMeters(
+        { lat, lng },
+        zone.center
+      );
+      return d <= zone.radius;
+    }) || null
+  );
+}
+
 module.exports = {
   getAllParkingZones,
   getParkingZonesByCity,
@@ -54,4 +85,5 @@ module.exports = {
   createParkingZone,
   updateParkingZone,
   deleteParkingZone,
+  findParkingZoneForLocation,
 };

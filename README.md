@@ -9,7 +9,8 @@ Detta projekt består av tre delar: backend, frontend och en simulator för elsp
 ## Struktur
 
 - `backend/` – Express.js API som hanterar data och logik.
-- `frontend/` – Webbgränssnitt för att visa elsparkcyklar.
+- `frontend-customer-app/` – Kundapplikation för att hyra elsparkcyklar.
+- `frontend-customer-website/` – Kundwebb för att hantera konto, se reshistorik och fakturor.
 - `frontend-admin/` – Admin-gränssnitt för att hantera cyklar, städer, användare och resor.
 - `simulator/` – Genererar testdata för backend.
 - `docs/` – Dokumentation och referenser.

@@ -39,7 +39,7 @@ export default function Invoices() {
       {invoices.length === 0 ? (
         <p>Inga fakturor hittades ännu.</p>
       ) : (
-        <InvoicesList invoices={invoices} />
+        <InvoicesList invoices={invoices.reverse()} />
       )}
     </div>
   );

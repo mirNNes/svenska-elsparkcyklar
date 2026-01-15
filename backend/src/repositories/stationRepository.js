@@ -38,9 +38,23 @@ async function updateStation(id, updates) {
   if (updates.cityId !== undefined) station.cityId = updates.cityId;
   if (updates.location !== undefined) station.location = updates.location;
   if (updates.capacity !== undefined) station.capacity = updates.capacity;
-  if (updates.currentBikes !== undefined) station.currentBikes = updates.currentBikes;
+  if (updates.currentBikes !== undefined)
+    station.currentBikes = updates.currentBikes;
 
   await station.save();
+  return station;
+}
+
+// Minska antal cyklar på stationen
+async function removeBikeFromStation(stationId) {
+  const station = await Station.findOne({ id: stationId });
+  if (!station) return null;
+
+  if (station.currentBikes > 0) {
+    station.currentBikes -= 1;
+    await station.save();
+  }
+
   return station;
 }
 
@@ -55,5 +69,6 @@ module.exports = {
   getStationById,
   createStation,
   updateStation,
+  removeBikeFromStation,
   deleteStation,
 };

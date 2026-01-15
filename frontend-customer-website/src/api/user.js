@@ -1,6 +1,6 @@
 import { api as axios } from "./http"; 
 
-export const getUSer = async () => {
+export const getUser = async () => {
   const response = await axios.get("/user/me");
   return response.data;
 };

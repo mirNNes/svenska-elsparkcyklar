@@ -50,6 +50,18 @@ const simulation = {
   lastLogAt: 0,
 };
 
+function isFiniteNumber(n) {
+  return typeof n === "number" && Number.isFinite(n);
+}
+
+function hasValidLatLng(location) {
+  return isFiniteNumber(location?.lat) && isFiniteNumber(location?.lng);
+}
+
+function isZeroZero(location) {
+  return location?.lat === 0 && location?.lng === 0;
+}
+
 function normalizeBike(bike) {
   return {
     _id: bike._id,
@@ -62,9 +74,14 @@ function normalizeBike(bike) {
   };
 }
 
+/**
+ * Returnerar center för stad, eller null om den inte finns.
+ * Viktigt: INGEN fallback till {lat:0,lng:0} eftersom det skickar cyklar till havet.
+ */
 function getCenterForCity(cityCenters, cityId) {
-  const key = cityId?.toString();
-  return cityCenters[key] || { lat: 0, lng: 0 };
+  const key = cityId?.toString?.();
+  if (!key) return null;
+  return cityCenters[key] || null;
 }
 
 function getInitialVelocity() {
@@ -76,13 +93,10 @@ function getInitialVelocity() {
   };
 }
 
-function getNextMovement(bike, center) {
-  const baseLat = Number.isFinite(bike.location?.lat)
-    ? bike.location.lat
-    : center.lat || 0;
-  const baseLng = Number.isFinite(bike.location?.lng)
-    ? bike.location.lng
-    : center.lng || 0;
+function getNextMovement(bike, center, baseLocation) {
+  // baseLocation är redan validerad innan anrop
+  const baseLat = baseLocation.lat;
+  const baseLng = baseLocation.lng;
 
   const currentVelocity = bike.velocity || getInitialVelocity();
   const speed =
@@ -355,7 +369,10 @@ async function prepareSimulation(bikesPerCity) {
   const bikes = [];
 
   for (const city of cities) {
-    cityCenters[city._id.toString()] = city.center || { lat: 0, lng: 0 };
+    // Lägg bara in center om det faktiskt finns och är giltigt.
+    if (hasValidLatLng(city.center) && !isZeroZero(city.center)) {
+      cityCenters[city._id.toString()] = city.center;
+    }
 
     const existing = await bikeRepository.getSimulationBikesByCity(city._id);
     const missing = Math.max(0, bikesPerCity - existing.length);
@@ -437,24 +454,36 @@ router.post("/start", requireAuth, requireRole("admin"), async (req, res) => {
     try {
       const updatedBikes = simulation.bikes.map((bike) => {
         const center = getCenterForCity(simulation.cityCenters, bike.cityId);
-        const baseLocation =
-          Number.isFinite(bike.location?.lat) &&
-          Number.isFinite(bike.location?.lng)
-            ? bike.location
-            : center;
-        const currentBattery = Number.isFinite(bike.battery)
-          ? bike.battery
-          : 100;
+
+        const hasBikeLocation = hasValidLatLng(bike.location) && !isZeroZero(bike.location);
+
+        // Om vi saknar både giltig location och giltigt center, rör inte cykeln
+        // (detta är huvudskyddet som stoppar 0,0 från att hamna i DB)
+        if (!hasBikeLocation && !center) {
+          return bike;
+        }
+
+        const baseLocation = hasBikeLocation ? bike.location : center;
+
+        const currentBattery = Number.isFinite(bike.battery) ? bike.battery : 100;
         const nextBattery = Math.max(0, currentBattery - Math.random() * 1.5);
+
         let nextLocation = baseLocation;
         let nextVelocity = bike.velocity || { lat: 0, lng: 0 };
         let speed = 0;
         const isAvailable = nextBattery > 0 ? bike.isAvailable : false;
 
         if (nextBattery > 0) {
-          const movement = getNextMovement(bike, center);
+          const movement = getNextMovement(bike, center, baseLocation);
           nextLocation = movement.nextLocation;
           nextVelocity = movement.nextVelocity;
+
+          // Extra skydd: om något blir knasigt, behåll baseLocation
+          if (!hasValidLatLng(nextLocation) || isZeroZero(nextLocation)) {
+            nextLocation = baseLocation;
+            nextVelocity = { lat: 0, lng: 0 };
+          }
+
           speed = Math.round(
             Math.sqrt(nextVelocity.lat ** 2 + nextVelocity.lng ** 2) * 111000
           );

@@ -46,7 +46,7 @@ export default function Layout({ children, onLogout, accessToken, user }) {
     if (!accessToken || isLogin) return;
 
     // Ta bort /api från VITE_API_URL för att få ren backend-bas-URL
-    const API_BASE = import.meta.env.VITE_API_URL.replace('/api', '');
+    const API_BASE = window.location.origin;
     socketRef.current = io(API_BASE, {
       // Skicka med JWT-token som auth-info till Socket.IO-servern
       auth: { token: accessToken }

@@ -142,7 +142,7 @@ export default function App() {
             <Route
               path="/create_account"
               element={
-                  <CreateAccount />
+                  <CreateAccount onLogin={handleLogin} />
               }
             />
           </Routes>

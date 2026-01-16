@@ -124,6 +124,13 @@ async function startRide(bikeId, userId) {
   const lastRide = await Ride.findOne().sort({ id: -1 });
   const nextId = lastRide ? lastRide.id + 1 : 1;
 
+  let startParkingStatus = "OUTSIDE_ZONE";
+  if (bike.currentStationId) {
+    startParkingStatus = "STATION";
+  } else if (bike.parkingStatus) {
+    startParkingStatus = bike.parkingStatus;
+  }
+
   const ride = new Ride({
     id: nextId,
     bikeId: bike._id,
@@ -135,6 +142,7 @@ async function startRide(bikeId, userId) {
       lat: bike.location?.lat ?? null,
       lng: bike.location?.lng ?? null,
     },
+    startParkingStatus,
   });
 
   await ride.save();
@@ -183,7 +191,35 @@ async function endRide(rideId, endLocation) {
   const parking = await getParkingInfo(bike);
   ride.parkingType = parking.type;
   ride.parkingFee = parking.fee;
-  ride.price = roundMoney(BASE_PRICE + PRICE_PER_MINUTE * durationMinutes + parking.fee);
+
+  if (parking.type === "station") {
+    ride.endParkingStatus = "STATION";
+  } else if (parking.type === "parking") {
+    ride.endParkingStatus = "OK";
+  } else {
+    ride.endParkingStatus = "OUTSIDE_ZONE";
+  }
+
+  const basePrice = BASE_PRICE;
+  const timePrice = PRICE_PER_MINUTE * durationMinutes;
+
+  let extraFee = timePrice + parking.fee;
+  let discount = 0;
+
+  if (
+    ride.startParkingStatus === "OUTSIDE_ZONE" &&
+    ride.endParkingStatus === "OK"
+  ) {
+    discount = FREE_PARKING_FEE;
+  }
+
+  const totalPrice = basePrice + extraFee - discount;
+
+  ride.basePrice = roundMoney(basePrice);
+  ride.extraFee = roundMoney(extraFee);
+  ride.discount = roundMoney(discount);
+  ride.totalPrice = roundMoney(totalPrice);
+  ride.price = ride.totalPrice;
 
   if (bike && Number.isFinite(bike.battery)) {
     const drained = Math.max(0, Math.round(ride.energyUsed));
@@ -202,14 +238,14 @@ async function endRide(rideId, endLocation) {
 
   // Dra från saldo om möjligt, annars skapa faktura
   const user = await User.findById(ride.userId);
-  if (user && Number.isFinite(user.balance) && user.balance >= ride.price) {
-    user.balance = roundMoney(user.balance - ride.price);
+  if (user && Number.isFinite(user.balance) && user.balance >= ride.totalPrice) {
+    user.balance = roundMoney(user.balance - ride.totalPrice);
     await user.save();
   } else {
     await invoiceRepository.createInvoice({
       userId: ride.userId,
       rideId: ride._id,
-      amount: ride.price,
+      amount: ride.totalPrice,
     });
   }
 

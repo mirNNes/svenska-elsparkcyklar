@@ -107,12 +107,17 @@ async function deleteBike(id) {
   return { success: true };
 }
 
-async function startRent(bikeId, userId) {
-  const rent = await rentRepository.createRent({ bikeId, userId });
+async function startRent(bikeId, userId, extra = {}) {
+  const rent = await rentRepository.createRent({
+    bikeId,
+    userId,
+    startParkingStatus: extra.startParkingStatus,
+  });
+
   if (rent && rent.error) {
     return rent;
   }
-  // rent.bikeId är nu en Mongo _id (ObjectId)
+  
   await Bike.findOneAndUpdate({ _id: rent.bikeId }, { isAvailable: false });
   return rent;
 }
@@ -166,8 +171,24 @@ async function moveBikeToStation(bikeId, location, updates = {}) {
     bike.currentStationId = updates.currentStationId;
   }
 
+  if (updates.parkingStatus !== undefined) {
+    bike.parkingStatus = updates.parkingStatus;
+  }
+
+  if (updates.parkingZoneId !== undefined) {
+    bike.parkingZoneId = updates.parkingZoneId;
+  }
+
   await bike.save();
   return bike;
+}
+
+async function updateBikeByObjectId(objectId, updates) {
+  return await Bike.findByIdAndUpdate(
+    objectId,
+    { $set: updates },
+    { new: true, runValidators: true }
+  );
 }
 
 module.exports = {
@@ -187,4 +208,5 @@ module.exports = {
   updateBikeTelemetry,
   deleteSimulationBikes,
   moveBikeToStation,
+  updateBikeByObjectId,
 };

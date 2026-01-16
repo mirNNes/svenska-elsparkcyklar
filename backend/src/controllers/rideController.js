@@ -69,13 +69,27 @@ async function startRide(req, res) {
     await stationRepository.removeBikeFromStation(stationId);
   }
 
-  // Lägre startavgift om cykeln stod på fri parkering
-  const startFeeModifier =
-    bike.parkingStatus === "OUTSIDE_ZONE" ? 0.8 : 1.0;
+  const parkingZone = await parkingZoneRepository.findParkingZoneForLocation(
+    bike.location,
+    bike.cityId
+  );
 
-  const ride = await rideRepository.startRide(bikeId, userId, {
-    startFeeModifier,
+  let startParkingStatus = "OUTSIDE_ZONE";
+  let parkingZoneId = null;
+
+  if (bike.currentStationId) {
+    startParkingStatus = "STATION";
+  } else if (parkingZone) {
+    startParkingStatus = "OK";
+    parkingZoneId = parkingZone.id;
+  }
+
+  await bikeRepository.updateBikeTelemetry(bikeId, {
+    parkingStatus: startParkingStatus,
+    parkingZoneId,
   });
+
+  const ride = await rideRepository.startRide(bikeId, userId);
 
   if (ride && ride.error) {
     const status = ride.error === "Bike already in ride" ? 400 : 404;
@@ -84,7 +98,7 @@ async function startRide(req, res) {
 
   await bikeRepository.markBikeAsUnavailable(bikeId);
 
-  res.status(201).json(ride);
+  res.status(201).json(ride.ride);
 }
 
 // POST /ride/end - avsluta en resa

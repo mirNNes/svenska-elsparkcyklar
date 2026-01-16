@@ -129,7 +129,18 @@ export default function UserDetails() {
               <table className="user-table">
                 <thead>
                   <tr>
-                    {["ID", "Start", "Slut", "Distans (m)", "Pris"].map((h) => (
+                    {[
+                      "ID",
+                      "Start",
+                      "Slut",
+                      "Distans (m)",
+                      "Startparkering",
+                      "Slutparkering",
+                      "Grundpris",
+                      "Extra avgift",
+                      "Rabatt",
+                      "Totalt",
+                    ].map((h) => (
                       <th key={h}>{h}</th>
                     ))}
                   </tr>
@@ -138,13 +149,31 @@ export default function UserDetails() {
                   {rides.map((r) => (
                     <tr key={r._id}>
                       <td>{r.id}</td>
+
                       <td>{formatDate(r.startedAt)}</td>
+
+                      <td>{r.endedAt ? formatDate(r.endedAt) : "Pågår"}</td>
+
+                      <td>{Number.isFinite(r.distance) ? `${r.distance} m` : "—"}</td>
+
+                      <td>{r.startParkingStatus ?? "—"}</td>
+
+                      <td>{r.endParkingStatus ?? "—"}</td>
+
                       <td>
-                        {r.endedAt ? formatDate(r.endedAt) : "Pågår"}
+                        {Number.isFinite(r.basePrice) ? `${r.basePrice} kr` : "—"}
                       </td>
-                      <td>{r.distance ?? "-"}</td>
-                      <td className="price-highlight">
-                        {Number.isFinite(r.price) ? `${r.price} kr` : "-"}
+
+                      <td>
+                        {Number.isFinite(r.extraFee) && r.extraFee > 0 ? `+${r.extraFee} kr` : "0 kr"}
+                      </td>
+
+                      <td>
+                        {Number.isFinite(r.discount) && r.discount > 0 ? `-${r.discount} kr` : "0 kr"}
+                      </td>
+
+                      <td style={{ fontWeight: 600 }}>
+                        {Number.isFinite(r.totalPrice) ? `${r.totalPrice} kr` : "—"}
                       </td>
                     </tr>
                   ))}

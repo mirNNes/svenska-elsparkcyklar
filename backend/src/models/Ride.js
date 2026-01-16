@@ -49,6 +49,38 @@ const rideSchema = new mongoose.Schema({
     type: Number,
     default: 1.0,
   },
+  
+  startParkingStatus: {
+    type: String,
+    enum: ["OK", "OUTSIDE_ZONE", "STATION"],
+    default: null,
+  },
+
+  endParkingStatus: {
+    type: String,
+    enum: ["OK", "OUTSIDE_ZONE", "STATION"],
+    default: null,
+  },
+
+  basePrice: {
+    type: Number,
+    default: 0,
+  },
+
+  extraFee: {
+    type: Number,
+    default: 0,
+  },
+
+  discount: {
+    type: Number,
+    default: 0,
+  },
+
+  totalPrice: {
+    type: Number,
+    default: 0,
+  },
 });
 
 module.exports = mongoose.model("Ride", rideSchema);

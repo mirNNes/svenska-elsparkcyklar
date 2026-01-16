@@ -18,14 +18,9 @@ export const rentBike = async (bikeId) => {
 };
 
 // Återlämna en cykel
-export const returnBike = async (bikeId) => {
-  try {
-    const response = await api.patch(`/bike/return/${bikeId}/admin`);
-    return response.data;
-  } catch (err) {
-    console.error("Error returning bike:", err);
-    throw err;
-  }
+export const endRent = async (rentId) => {
+  const response = await api.patch(`/rent/end/${rentId}`);
+  return response.data;
 };
 
 // Flytta en cykel to laddstation

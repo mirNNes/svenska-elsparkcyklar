@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { getAllBikes } from "../api/bikes";
 import { getAllCities } from "../api/cities";
+import { getAllStations } from "../api/stations";
 import L from "leaflet";
 
 const bikeIcon = new L.Icon({
@@ -12,9 +13,16 @@ const bikeIcon = new L.Icon({
   iconAnchor: [16, 32],
 });
 
+const stationIcon = new L.Icon({
+  iconUrl: "/charger.png",
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+});
+
 export default function MapView() {
   const [bikes, setBikes] = useState([]);
   const [cities, setCities] = useState([]);
+  const [stations, setStations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -46,6 +54,32 @@ export default function MapView() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const stationRes = await getAllStations();
+        if (!cancelled) {
+          setStations(
+            Array.isArray(stationRes?.data)
+              ? stationRes.data
+              : Array.isArray(stationRes)
+              ? stationRes
+              : []
+          );
+        }
+      } catch (err) {
+        if (!cancelled) console.error(err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  
 
   const defaultCenter = useMemo(() => {
     // Använd första stadens center om den finns, annars mitten av Sverige
@@ -88,6 +122,27 @@ export default function MapView() {
             </Popup>
           </Marker>
         ))}
+        {stations
+          .filter(
+            (s) =>
+              s?.location &&
+              typeof s.location.lat === "number" &&
+              typeof s.location.lng === "number"
+          )
+          .map((station) => (
+            <Marker
+              key={`station-${station.id}`}
+              position={[station.location.lat, station.location.lng]}
+              icon={stationIcon}
+            >
+              <Popup>
+                <strong>{station.name}</strong>
+                <br />
+                Cyklar: {station.currentBikes}
+                {station.capacity > 0 && ` / ${station.capacity}`}
+              </Popup>
+            </Marker>
+          ))}
       </MapContainer>
     </div>
   );

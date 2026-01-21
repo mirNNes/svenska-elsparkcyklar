@@ -257,20 +257,38 @@ export default function MapView({
     return filteredBikes.find((b) => b._id === selectedBikeId) || null;
   }, [filteredBikes, selectedBikeId]);
 
-  const bikesByParkingZone = useMemo(() => {
-    const map = {};
-    for (const zone of parkingZones) {
-      map[zone.id] = [];
-    }
+const bikesByParkingZone = useMemo(() => {
+  const counts = {};
+  for (const zone of parkingZones) {
+    counts[zone.id] = 0;
+  }
 
-    for (const bike of bikes) {
-      if (bike.parkingZoneId && map[bike.parkingZoneId]) {
-        map[bike.parkingZoneId].push(bike);
+  for (const bike of bikes) {
+    const lat = bike.location?.lat;
+    const lng = bike.location?.lng;
+    if (typeof lat !== "number" || typeof lng !== "number") continue;
+
+    for (const zone of parkingZones) {
+      const dLat = (zone.center.lat - lat) * Math.PI / 180;
+      const dLng = (zone.center.lng - lng) * Math.PI / 180;
+
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat * Math.PI / 180) *
+          Math.cos(zone.center.lat * Math.PI / 180) *
+          Math.sin(dLng / 2) ** 2;
+
+      const d =
+        6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      if (d <= zone.radius) {
+        counts[zone.id]++;
       }
     }
+  }
 
-    return map;
-  }, [bikes, parkingZones]);
+  return counts;
+}, [bikes, parkingZones]);
 
   const selectedBikeKey = selectedBike ? String(selectedBike.id) : null;
 
@@ -628,12 +646,7 @@ export default function MapView({
                     Radie: {zone.radius} m
                     <br />
                     <br />
-                    Cyklar här: {bikesByParkingZone[zone.id]?.length ?? 0}
-                    <ul style={{ paddingLeft: 16 }}>
-                      {bikesByParkingZone[zone.id]?.map((b) => (
-                        <li key={b.id}>Bike #{b.id}</li>
-                      ))}
-                    </ul>
+                    Cyklar här: {bikesByParkingZone[zone.id] ?? 0}
                   </Popup>
                 </Circle>
               ))}

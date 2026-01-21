@@ -25,8 +25,8 @@ export function calcPrice(startTime) {
     return price;
 }
 
-function checkIfInside(spotCoordinates, center, radius) {
-    let newRadius = distanceInKmBetweenEarthCoordinates(spotCoordinates[0], spotCoordinates[1], center.lat, center.lng);
+function checkIfInside(endingLat, endingLng, center, radius) {
+    let newRadius = distanceInKmBetweenEarthCoordinates(endingLat, endingLng, center.lat, center.lng);
 
     if( newRadius < radius ) {
         //point is inside the circle
@@ -71,12 +71,13 @@ export function calcLatLng(startTime, startLat, startLng, center, radius) {
         endingLng = startLng - (minutes * 0.0001); 
     }
 
-    let insideOK = checkIfInside({endingLat, endingLng}, center, radius);
+    console.log(startTime, startLat, startLng);
+
+    let insideOK = checkIfInside(endingLat, endingLng, center, radius);
 
     if (insideOK) {
         return [endingLat, endingLng];
     }
 
     return [startLat, startLng];
-
 }

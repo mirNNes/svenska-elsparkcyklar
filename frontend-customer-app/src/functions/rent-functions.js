@@ -13,16 +13,17 @@ export function makeDateString(date){
 
 export function calcTime(startTime) {
     let diff = Math.abs(new Date() - new Date(startTime));
-    let minutes = Math.floor((diff/1000)/60);
+    let minutes = Math.round(((diff/1000)/60)*100)/100;
 
     return minutes;
 }
 
 export function calcPrice(startTime) {
     let minutes = calcTime(startTime);
-    let price = (minutes * 2) + 10;
+    let price = Math.round(((minutes * 2) + 10)*100)/100;
+    let result = price.toFixed(2);
 
-    return price;
+    return result;
 }
 
 function checkIfInside(endingLat, endingLng, center, radius) {
@@ -70,8 +71,6 @@ export function calcLatLng(startTime, startLat, startLng, center, radius) {
     if (rndLng == 1){
         endingLng = startLng - (minutes * 0.0001); 
     }
-
-    console.log(startTime, startLat, startLng);
 
     let insideOK = checkIfInside(endingLat, endingLng, center, radius);
 

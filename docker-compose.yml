@@ -35,16 +35,6 @@ services:
     depends_on:
       - backend
 
-  simulator:
-    build: ./simulator
-    ports:
-      - "4000:4000"
-    volumes:
-      - ./simulator:/usr/src/app
-      - /usr/src/app/node_modules
-    depends_on:
-      - backend
-
   mongo:
     image: mongo:6
     container_name: elsparkcyklar-mongo

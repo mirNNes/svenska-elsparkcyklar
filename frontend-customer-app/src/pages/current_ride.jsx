@@ -92,7 +92,7 @@ export default function CurrentRide() {
         <p>Resan startad:</p>
         <p>{startTimeString}</p>
         <p>Nuvarande tid:</p>
-        <p>{calcTime(ride.ride.startedAt)} minuter</p>
+        <p>{Math.floor(calcTime(ride.ride.startedAt))} minuter</p>
         <p>Nuvarande kostnad:</p>
         <p>{calcPrice(ride.ride.startedAt)} kr</p>
       </div>

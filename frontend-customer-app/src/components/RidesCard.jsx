@@ -6,7 +6,11 @@ export default function RidesCard({ ride }) {
     const month = newDate.getMonth();
     const year = newDate.getFullYear();
     const hour = newDate.getHours();
-    const minute = newDate.getMinutes();
+    let minute = newDate.getMinutes();
+
+    if (minute.toString().length == 1) {
+      minute = `${minute.toString()}0`
+    }
 
     return `${day}/${month+1}/${year} ${hour}:${minute}`
 
